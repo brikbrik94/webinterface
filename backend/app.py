@@ -52,6 +52,20 @@ def build_adapter(service_config: ServiceConfig) -> ServiceAdapter:
     )
 
 
+def _serialize_state(service_config: ServiceConfig) -> dict[str, object]:
+    """Return a JSON-serialisable representation of the service state."""
+
+    adapter = build_adapter(service_config)
+    state: ServiceState = adapter.fetch_state()
+    return {
+        "key": service_config.key,
+        "name": service_config.name,
+        "status": state.status,
+        "details": state.details,
+        "metadata": service_config.metadata,
+    }
+
+
 @app.get("/services")
 def list_services(configs: list[ServiceConfig] = Depends(get_service_configs)) -> list[dict[str, str]]:
     return [
@@ -64,6 +78,29 @@ def list_services(configs: list[ServiceConfig] = Depends(get_service_configs)) -
     ]
 
 
+@app.get("/services/status")
+def list_service_states(
+    configs: list[ServiceConfig] = Depends(get_service_configs),
+) -> list[dict[str, object]]:
+    """Return the current state for every configured service."""
+
+    states: list[dict[str, object]] = []
+    for service_config in configs:
+        try:
+            states.append(_serialize_state(service_config))
+        except Exception as exc:  # pragma: no cover - defensive fallback
+            states.append(
+                {
+                    "key": service_config.key,
+                    "name": service_config.name,
+                    "status": "error",
+                    "details": {"error": str(exc)},
+                    "metadata": service_config.metadata,
+                }
+            )
+    return states
+
+
 @app.get("/services/{service_key}")
 def get_service_state(
     service_key: str,
@@ -71,13 +108,5 @@ def get_service_state(
 ) -> dict[str, object]:
     for service_config in configs:
         if service_config.key == service_key:
-            adapter = build_adapter(service_config)
-            state: ServiceState = adapter.fetch_state()
-            return {
-                "key": service_config.key,
-                "name": service_config.name,
-                "status": state.status,
-                "details": state.details,
-                "metadata": service_config.metadata,
-            }
+            return _serialize_state(service_config)
     raise HTTPException(status_code=404, detail=f"Service '{service_key}' not found")

@@ -9,7 +9,7 @@ backend/               # FastAPI-Backend mit Service-Adaptern
   app.py               # Einstiegspunkt für die API
   config/loader.py     # YAML-Konfigurationslader
   services/            # Adapter-Schnittstelle und Implementierungen
-frontend/              # Einfaches statisches UI zur ORS-Überwachung
+frontend/              # Statisches UI mit Übersichts- und Detailseite
 config/services.yaml   # Beispielkonfiguration für Dienste
 docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
 ```
@@ -40,13 +40,15 @@ docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
    ```
 3. API testen:
    - `GET /services` listet alle konfigurierten Dienste.
-   - `GET /services/{key}` liefert Statusinformationen zu einem Dienst.
+   - `GET /services/status` liefert eine Statusübersicht für alle Dienste.
+   - `GET /services/{key}` liefert Statusinformationen zu einem einzelnen Dienst.
 
-## Test-UI für ORS
+## Weboberfläche
 
-Nach dem Start von Uvicorn steht unter [http://localhost:8000/ui/](http://localhost:8000/ui/) eine erste Testoberfläche bereit.
-Sie ruft alle 15 Sekunden `GET /services/ors` auf, visualisiert den Status und zeigt eine Zusammenfassung der wichtigsten
-`systemctl`-Zeilen sowie die in `config/services.yaml` hinterlegten Metadaten (z. B. `config_dir: /var/lib/ors`).
+Nach dem Start von Uvicorn steht unter [http://localhost:8000/ui/](http://localhost:8000/ui/) eine Startseite bereit, die
+alle konfigurierten Dienste samt Status- und Systemctl-Zusammenfassung anzeigt. Über einen Klick auf einen Eintrag gelangt
+man zur Detailansicht unter `service.html?key=<dienst>`, die alle 15 Sekunden den ausgewählten Dienst aktualisiert und neben
+dem Roh-Output auch Metadaten wie das ORS-Konfigurationsverzeichnis (`/var/lib/ors`) darstellt.
 
 ## Eigene Adapter hinzufügen
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ORS Dienstüberwachung</title>
+    <title>Dienstübersicht</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -23,7 +23,7 @@
       }
 
       main {
-        width: min(960px, 100%);
+        width: min(1100px, 100%);
         background-color: rgba(15, 23, 42, 0.85);
         border-radius: 1rem;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
@@ -31,31 +31,52 @@
         border: 1px solid rgba(148, 163, 184, 0.2);
       }
 
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 2.5rem;
+      }
+
       h1 {
-        font-size: clamp(1.6rem, 2vw + 1rem, 2.5rem);
-        margin: 0 0 1rem;
+        font-size: clamp(1.8rem, 2vw + 1rem, 2.6rem);
+        margin: 0;
         letter-spacing: 0.03em;
         color: #f8fafc;
       }
 
       p.subtitle {
-        margin-top: 0;
-        margin-bottom: 2rem;
+        margin: 0;
         color: rgba(226, 232, 240, 0.75);
         font-size: 1rem;
       }
 
-      .card {
-        background: rgba(15, 23, 42, 0.65);
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
+      .service-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
       }
 
-      .card h2 {
-        margin-top: 0;
-        margin-bottom: 0.75rem;
+      .service-card {
+        display: flex;
+        flex-direction: column;
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 0.9rem;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+      }
+
+      .service-card:hover,
+      .service-card:focus {
+        transform: translateY(-2px);
+        border-color: rgba(96, 165, 250, 0.45);
+      }
+
+      .service-card h2 {
+        margin: 0 0 0.75rem;
         font-size: 1.25rem;
         color: #f8fafc;
       }
@@ -65,11 +86,12 @@
         align-items: center;
         gap: 0.5rem;
         border-radius: 999px;
-        padding: 0.4rem 0.85rem;
+        padding: 0.35rem 0.8rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        align-self: flex-start;
       }
 
       .badge.ok {
@@ -90,40 +112,23 @@
         border: 1px solid rgba(148, 163, 184, 0.45);
       }
 
-      dl.grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem 2rem;
-        margin: 0;
-      }
-
-      dl.grid dt {
-        font-size: 0.8rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: rgba(226, 232, 240, 0.7);
-      }
-
-      dl.grid dd {
-        margin: 0.25rem 0 0.75rem;
-        font-size: 1rem;
-        color: #e2e8f0;
-      }
-
-      pre {
-        background: rgba(15, 23, 42, 0.55);
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        font-size: 0.9rem;
-        overflow-x: auto;
+      .service-summary {
+        margin: 0.5rem 0 0;
+        color: rgba(226, 232, 240, 0.85);
+        font-size: 0.95rem;
         line-height: 1.5;
-        color: #e2e8f0;
+      }
+
+      .service-meta {
+        margin: 0.75rem 0 0;
+        font-size: 0.85rem;
+        color: rgba(148, 163, 184, 0.9);
       }
 
       .timestamp {
+        margin-top: 2rem;
         font-size: 0.85rem;
-        color: rgba(148, 163, 184, 0.75);
+        color: rgba(148, 163, 184, 0.7);
       }
 
       .error-banner {
@@ -149,43 +154,41 @@
   </head>
   <body>
     <main>
-      <h1>OpenRouteService</h1>
-      <p class="subtitle">
-        Zyklische Statusabfrage für den lokalen ORS-Dienst inkl. Zusammenfassung
-        wichtiger <code>systemctl</code>-Informationen.
-      </p>
+      <header>
+        <h1>Dienstübersicht</h1>
+        <p class="subtitle">
+          Live-Zusammenfassung aller überwachten Dienste. Klicken Sie einen Eintrag an, um Detailinformationen einzusehen.
+        </p>
+      </header>
 
       <div id="error-banner" class="error-banner"></div>
-
-      <section class="card">
-        <h2>Status</h2>
-        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-          <span id="status-badge" class="badge unknown">Unbekannt</span>
-          <span class="timestamp" id="last-updated">Noch keine Daten</span>
-        </div>
-        <dl class="grid" id="systemctl-summary"></dl>
-      </section>
-
-      <section class="card">
-        <h2>Konfiguration</h2>
-        <dl class="grid" id="metadata"></dl>
-      </section>
-
-      <section class="card">
-        <h2>Rohdaten</h2>
-        <pre id="status-output">…</pre>
-      </section>
+      <div id="service-grid" class="service-grid"></div>
+      <p id="last-updated" class="timestamp">Noch keine Daten abgerufen.</p>
     </main>
     <script>
-      const SERVICE_KEY = "ors";
+      const grid = document.getElementById("service-grid");
+      const errorBanner = document.getElementById("error-banner");
+      const lastUpdated = document.getElementById("last-updated");
       const REFRESH_INTERVAL_MS = 15000;
 
-      const statusBadge = document.getElementById("status-badge");
-      const lastUpdated = document.getElementById("last-updated");
-      const outputPre = document.getElementById("status-output");
-      const summaryList = document.getElementById("systemctl-summary");
-      const metadataList = document.getElementById("metadata");
-      const errorBanner = document.getElementById("error-banner");
+      async function loadServiceStates() {
+        try {
+          const response = await fetch("/services/status");
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+          }
+          const services = await response.json();
+          renderServices(services);
+          lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
+          errorBanner.style.display = "none";
+          errorBanner.textContent = "";
+        } catch (error) {
+          grid.innerHTML = "";
+          errorBanner.textContent = `Fehler beim Laden der Dienste: ${error.message}`;
+          errorBanner.style.display = "block";
+          lastUpdated.textContent = `Fehlgeschlagen um ${formatTimestamp(new Date())}`;
+        }
+      }
 
       function formatTimestamp(date) {
         return new Intl.DateTimeFormat("de-DE", {
@@ -194,63 +197,76 @@
         }).format(date);
       }
 
-      function updateBadge(status) {
+      function statusLabel(status) {
         const normalized = (status || "unknown").toLowerCase();
-        statusBadge.textContent = normalized === "ok" ? "OK" : normalized;
-        statusBadge.className = `badge ${normalized}`;
+        if (normalized === "ok") {
+          return "OK";
+        }
+        if (normalized === "error") {
+          return "Fehler";
+        }
+        return "Unbekannt";
       }
 
-      function renderDefinitionList(listElement, data) {
-        listElement.innerHTML = "";
-        if (!data || Object.keys(data).length === 0) {
+      function createServiceSummary(service) {
+        const systemctl = service.details?.systemctl || {};
+        if (systemctl.active) {
+          return systemctl.active;
+        }
+        if (systemctl.loaded) {
+          return systemctl.loaded;
+        }
+        if (service.details?.output) {
+          return service.details.output.split("\n")[0];
+        }
+        if (service.metadata?.description) {
+          return service.metadata.description;
+        }
+        return "Keine weiteren Informationen verfügbar.";
+      }
+
+      function renderServices(services) {
+        grid.innerHTML = "";
+        if (!Array.isArray(services) || services.length === 0) {
           const emptyNote = document.createElement("p");
-          emptyNote.textContent = "Keine Daten verfügbar.";
-          emptyNote.style.margin = "0";
-          emptyNote.style.color = "rgba(226, 232, 240, 0.65)";
-          listElement.appendChild(emptyNote);
+          emptyNote.textContent = "Es sind keine Dienste konfiguriert.";
+          emptyNote.style.color = "rgba(226, 232, 240, 0.75)";
+          grid.appendChild(emptyNote);
           return;
         }
 
-        Object.entries(data).forEach(([key, value]) => {
-          const dt = document.createElement("dt");
-          dt.textContent = key;
-          const dd = document.createElement("dd");
-          dd.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
-          listElement.appendChild(dt);
-          listElement.appendChild(dd);
+        services.forEach((service) => {
+          const card = document.createElement("a");
+          card.href = `service.html?key=${encodeURIComponent(service.key)}`;
+          card.className = `service-card`;
+
+          const heading = document.createElement("h2");
+          heading.textContent = service.name || service.key;
+
+          const badge = document.createElement("span");
+          const normalized = (service.status || "unknown").toLowerCase();
+          badge.className = `badge ${normalized}`;
+          badge.textContent = statusLabel(service.status);
+
+          const summary = document.createElement("p");
+          summary.className = "service-summary";
+          summary.textContent = createServiceSummary(service);
+
+          const meta = document.createElement("p");
+          meta.className = "service-meta";
+          meta.textContent = service.metadata?.description || `Dienstschlüssel: ${service.key}`;
+
+          card.appendChild(badge);
+          card.appendChild(heading);
+          card.appendChild(summary);
+          card.appendChild(meta);
+
+          grid.appendChild(card);
         });
       }
 
-      async function fetchState() {
-        try {
-          const response = await fetch(`/services/${SERVICE_KEY}`);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status} – ${response.statusText}`);
-          }
-          const payload = await response.json();
-          updateBadge(payload.status);
-          lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
-          outputPre.textContent = payload.details?.output || "Keine Ausgabe verfügbar.";
-          renderDefinitionList(summaryList, payload.details?.systemctl || {});
-
-          const metadataEntries = { ...payload.metadata };
-          if (payload.details?.returncode !== undefined) {
-            metadataEntries["status returncode"] = payload.details.returncode;
-          }
-          renderDefinitionList(metadataList, metadataEntries);
-
-          errorBanner.style.display = "none";
-          errorBanner.textContent = "";
-        } catch (error) {
-          updateBadge("error");
-          errorBanner.textContent = `Fehler bei der Abfrage: ${error.message}`;
-          errorBanner.style.display = "block";
-          lastUpdated.textContent = `Fehlgeschlagen um ${formatTimestamp(new Date())}`;
-        }
-      }
-
-      fetchState();
-      setInterval(fetchState, REFRESH_INTERVAL_MS);
+      loadServiceStates();
+      setInterval(loadServiceStates, REFRESH_INTERVAL_MS);
     </script>
   </body>
 </html>
