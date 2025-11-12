@@ -8,7 +8,10 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 
-DEFAULT_CONFIG_PATH = Path("config/services.yaml")
+# The configuration file should be resolved relative to the project root so that
+# loading works no matter which working directory the process starts from.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CONFIG_PATH = _REPO_ROOT / "config" / "services.yaml"
 
 
 @dataclass
