@@ -9,7 +9,7 @@ backend/               # FastAPI-Backend mit Service-Adaptern
   app.py               # Einstiegspunkt für die API
   config/loader.py     # YAML-Konfigurationslader
   services/            # Adapter-Schnittstelle und Implementierungen
-frontend/              # Statisches UI mit Übersichts- und Detailseite
+frontend/              # Statisches UI mit Übersichts-, Detail- und Konfigurationsseite
 config/services.yaml   # Beispielkonfiguration für Dienste
 docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
 ```
@@ -49,6 +49,10 @@ Nach dem Start von Uvicorn steht unter [http://localhost:8000/ui/](http://localh
 alle konfigurierten Dienste samt Status- und Systemctl-Zusammenfassung anzeigt. Über einen Klick auf einen Eintrag gelangt
 man zur Detailansicht unter `service.html?key=<dienst>`, die alle 15 Sekunden den ausgewählten Dienst aktualisiert und neben
 dem Roh-Output auch Metadaten wie das ORS-Konfigurationsverzeichnis (`/var/lib/ors`) darstellt.
+
+Über den Link „Anzeige konfigurieren“ gelangt man zur Seite `settings.html`. Dort lässt sich per Checkbox pro Dienst festlegen,
+welche Einträge auf dem Dashboard erscheinen sollen. Die Auswahl wird im Browser (Local Storage) gespeichert; ohne Auswahl
+werden automatisch alle Dienste angezeigt.
 
 ## Eigene Adapter hinzufügen
 
