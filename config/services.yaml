@@ -1,0 +1,25 @@
+# Base configuration file for the local service orchestrator.
+# Each entry describes a service, its adapter implementation and the commands
+# required to interact with it. Replace the example commands with the actual
+# commands used to manage your local services.
+services:
+  - key: ors
+    name: OpenRouteService
+    adapter: command
+    commands:
+      start: "systemctl start ors.service"
+      stop: "systemctl stop ors.service"
+      status: "systemctl status --no-pager ors.service"
+    metadata:
+      description: "Example configuration for the ORS service."
+      config_dir: "/var/lib/ors"
+  - key: fastest-responding
+    name: Fastest Responding
+    adapter: command
+    commands:
+      start: "systemctl start fastest-responding.service"
+      stop: "systemctl stop fastest-responding.service"
+      restart: "systemctl restart fastest-responding.service"
+      status: "systemctl status --no-pager fastest-responding.service"
+    metadata:
+      description: "Placeholder entry for the fastest-responding project."
