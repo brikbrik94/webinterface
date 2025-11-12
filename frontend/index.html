@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dienstübersicht</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background-color: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 2rem 1rem 3rem;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+      }
+
+      main {
+        width: min(1100px, 100%);
+        background-color: rgba(15, 23, 42, 0.85);
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+        padding: 2.5rem 2rem 3rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 2.5rem;
+      }
+
+      h1 {
+        font-size: clamp(1.8rem, 2vw + 1rem, 2.6rem);
+        margin: 0;
+        letter-spacing: 0.03em;
+        color: #f8fafc;
+      }
+
+      p.subtitle {
+        margin: 0;
+        color: rgba(226, 232, 240, 0.75);
+        font-size: 1rem;
+      }
+
+      .service-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .service-card {
+        display: flex;
+        flex-direction: column;
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 0.9rem;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+      }
+
+      .service-card:hover,
+      .service-card:focus {
+        transform: translateY(-2px);
+        border-color: rgba(96, 165, 250, 0.45);
+      }
+
+      .service-card h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+        color: #f8fafc;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 999px;
+        padding: 0.35rem 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.75rem;
+        align-self: flex-start;
+      }
+
+      .badge.ok {
+        background: rgba(34, 197, 94, 0.18);
+        color: #4ade80;
+        border: 1px solid rgba(74, 222, 128, 0.45);
+      }
+
+      .badge.error {
+        background: rgba(248, 113, 113, 0.18);
+        color: #fca5a5;
+        border: 1px solid rgba(248, 113, 113, 0.45);
+      }
+
+      .badge.unknown {
+        background: rgba(148, 163, 184, 0.18);
+        color: #cbd5f5;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+      }
+
+      .service-summary {
+        margin: 0.5rem 0 0;
+        color: rgba(226, 232, 240, 0.85);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .service-meta {
+        margin: 0.75rem 0 0;
+        font-size: 0.85rem;
+        color: rgba(148, 163, 184, 0.9);
+      }
+
+      .timestamp {
+        margin-top: 2rem;
+        font-size: 0.85rem;
+        color: rgba(148, 163, 184, 0.7);
+      }
+
+      .error-banner {
+        display: none;
+        margin-bottom: 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+        background: rgba(127, 29, 29, 0.55);
+        color: #fecaca;
+        padding: 1rem;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 1.5rem 0.5rem 2.5rem;
+        }
+
+        main {
+          padding: 1.75rem 1.25rem 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Dienstübersicht</h1>
+        <p class="subtitle">
+          Live-Zusammenfassung aller überwachten Dienste. Klicken Sie einen Eintrag an, um Detailinformationen einzusehen.
+        </p>
+      </header>
+
+      <div id="error-banner" class="error-banner"></div>
+      <div id="service-grid" class="service-grid"></div>
+      <p id="last-updated" class="timestamp">Noch keine Daten abgerufen.</p>
+    </main>
+    <script>
+      const grid = document.getElementById("service-grid");
+      const errorBanner = document.getElementById("error-banner");
+      const lastUpdated = document.getElementById("last-updated");
+      const REFRESH_INTERVAL_MS = 15000;
+
+      async function loadServiceStates() {
+        try {
+          const response = await fetch("/services/status");
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+          }
+          const services = await response.json();
+          renderServices(services);
+          lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
+          errorBanner.style.display = "none";
+          errorBanner.textContent = "";
+        } catch (error) {
+          grid.innerHTML = "";
+          errorBanner.textContent = `Fehler beim Laden der Dienste: ${error.message}`;
+          errorBanner.style.display = "block";
+          lastUpdated.textContent = `Fehlgeschlagen um ${formatTimestamp(new Date())}`;
+        }
+      }
+
+      function formatTimestamp(date) {
+        return new Intl.DateTimeFormat("de-DE", {
+          dateStyle: "medium",
+          timeStyle: "medium",
+        }).format(date);
+      }
+
+      function statusLabel(status) {
+        const normalized = (status || "unknown").toLowerCase();
+        if (normalized === "ok") {
+          return "OK";
+        }
+        if (normalized === "error") {
+          return "Fehler";
+        }
+        return "Unbekannt";
+      }
+
+      function createServiceSummary(service) {
+        const systemctl = service.details?.systemctl || {};
+        if (systemctl.active) {
+          return systemctl.active;
+        }
+        if (systemctl.loaded) {
+          return systemctl.loaded;
+        }
+        if (service.details?.output) {
+          return service.details.output.split("\n")[0];
+        }
+        if (service.metadata?.description) {
+          return service.metadata.description;
+        }
+        return "Keine weiteren Informationen verfügbar.";
+      }
+
+      function renderServices(services) {
+        grid.innerHTML = "";
+        if (!Array.isArray(services) || services.length === 0) {
+          const emptyNote = document.createElement("p");
+          emptyNote.textContent = "Es sind keine Dienste konfiguriert.";
+          emptyNote.style.color = "rgba(226, 232, 240, 0.75)";
+          grid.appendChild(emptyNote);
+          return;
+        }
+
+        services.forEach((service) => {
+          const card = document.createElement("a");
+          card.href = `service.html?key=${encodeURIComponent(service.key)}`;
+          card.className = `service-card`;
+
+          const heading = document.createElement("h2");
+          heading.textContent = service.name || service.key;
+
+          const badge = document.createElement("span");
+          const normalized = (service.status || "unknown").toLowerCase();
+          badge.className = `badge ${normalized}`;
+          badge.textContent = statusLabel(service.status);
+
+          const summary = document.createElement("p");
+          summary.className = "service-summary";
+          summary.textContent = createServiceSummary(service);
+
+          const meta = document.createElement("p");
+          meta.className = "service-meta";
+          meta.textContent = service.metadata?.description || `Dienstschlüssel: ${service.key}`;
+
+          card.appendChild(badge);
+          card.appendChild(heading);
+          card.appendChild(summary);
+          card.appendChild(meta);
+
+          grid.appendChild(card);
+        });
+      }
+
+      loadServiceStates();
+      setInterval(loadServiceStates, REFRESH_INTERVAL_MS);
+    </script>
+  </body>
+</html>
