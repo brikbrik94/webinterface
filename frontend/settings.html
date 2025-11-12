@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard-Konfiguration</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background-color: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 2rem 1rem 3rem;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+      }
+
+      main {
+        width: min(960px, 100%);
+        background-color: rgba(15, 23, 42, 0.85);
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+        padding: 2.5rem 2rem 3rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+      }
+
+      h1 {
+        font-size: clamp(1.6rem, 2vw + 1rem, 2.4rem);
+        margin: 0;
+        letter-spacing: 0.03em;
+        color: #f8fafc;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: rgba(226, 232, 240, 0.75);
+        line-height: 1.6;
+        max-width: 65ch;
+      }
+
+      nav a {
+        color: #38bdf8;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      nav a:hover,
+      nav a:focus {
+        text-decoration: underline;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .service-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .service-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.65);
+      }
+
+      .service-item label {
+        cursor: pointer;
+        flex: 1;
+      }
+
+      .service-item strong {
+        display: block;
+        color: #f8fafc;
+        margin-bottom: 0.35rem;
+      }
+
+      .service-item span {
+        color: rgba(148, 163, 184, 0.85);
+        font-size: 0.9rem;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      button,
+      .link-button {
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        font-weight: 600;
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+      }
+
+      button:hover,
+      button:focus,
+      .link-button:hover,
+      .link-button:focus {
+        background: rgba(56, 189, 248, 0.22);
+        border-color: rgba(125, 211, 252, 0.65);
+      }
+
+      .status {
+        color: rgba(226, 232, 240, 0.75);
+        font-size: 0.95rem;
+      }
+
+      .error-banner {
+        display: none;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+        background: rgba(127, 29, 29, 0.55);
+        color: #fecaca;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .info {
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.55);
+        padding: 1rem;
+        color: rgba(226, 232, 240, 0.8);
+        line-height: 1.6;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 1.5rem 0.5rem 2.5rem;
+        }
+
+        main {
+          padding: 1.75rem 1.25rem 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <nav><a href="./">← Zurück zur Übersicht</a></nav>
+        <h1>Anzeige konfigurieren</h1>
+        <p class="subtitle">
+          Wählen Sie aus, welche Dienste auf der Startseite sichtbar sein sollen. Ohne Auswahl
+          werden automatisch alle überwachten Dienste eingeblendet.
+        </p>
+      </header>
+
+      <div id="error-banner" class="error-banner"></div>
+
+      <form id="service-form" aria-live="polite">
+        <ul id="service-list" class="service-list"></ul>
+        <div class="info">
+          Die Auswahl wird im Browser gespeichert. Wird keine Auswahl getroffen oder wird sie
+          zurückgesetzt, erscheinen alle Dienste wieder in der Übersicht.
+        </div>
+        <div class="actions">
+          <button type="button" id="show-all">Alle anzeigen</button>
+          <button type="button" id="hide-all">Alle ausblenden</button>
+          <span class="status" id="status-message">Lade Dienste …</span>
+        </div>
+      </form>
+    </main>
+    <script>
+      const STORAGE_KEY = "dashboard.visibleServices";
+      const listElement = document.getElementById("service-list");
+      const formElement = document.getElementById("service-form");
+      const statusMessage = document.getElementById("status-message");
+      const errorBanner = document.getElementById("error-banner");
+      const showAllButton = document.getElementById("show-all");
+      const hideAllButton = document.getElementById("hide-all");
+
+      function readSelection() {
+        try {
+          const raw = window.localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return null;
+          }
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) {
+            return null;
+          }
+          return new Set(parsed.filter((entry) => typeof entry === "string"));
+        } catch (error) {
+          console.warn("Konnte gespeicherte Diensteauswahl nicht lesen", error);
+          return null;
+        }
+      }
+
+      function writeSelection(selectedKeys) {
+        if (selectedKeys === null) {
+          window.localStorage.removeItem(STORAGE_KEY);
+          statusMessage.textContent = "Alle Dienste werden angezeigt.";
+          return;
+        }
+        const ordered = Array.from(selectedKeys).sort();
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ordered));
+        if (ordered.length === 0) {
+          statusMessage.textContent =
+            "Alle Dienste wurden ausgeblendet. Wählen Sie mindestens einen Eintrag aus, um ihn wieder anzuzeigen.";
+        } else {
+          statusMessage.textContent = `${ordered.length} Dienst(e) werden angezeigt.`;
+        }
+      }
+
+      function syncSelectionToCheckboxes(selectedKeys) {
+        const checkboxes = listElement.querySelectorAll('input[type="checkbox"][data-key]');
+        checkboxes.forEach((checkbox) => {
+          if (selectedKeys === null) {
+            checkbox.checked = true;
+          } else {
+            checkbox.checked = selectedKeys.has(checkbox.dataset.key);
+          }
+        });
+        if (checkboxes.length === 0) {
+          statusMessage.textContent = "Keine Dienste konfiguriert.";
+        } else if (selectedKeys === null) {
+          statusMessage.textContent = "Alle Dienste werden angezeigt.";
+        } else if (selectedKeys.size === 0) {
+          statusMessage.textContent =
+            "Alle Dienste wurden ausgeblendet. Wählen Sie mindestens einen Eintrag aus, um ihn wieder anzuzeigen.";
+        } else {
+          statusMessage.textContent = `${selectedKeys.size} Dienst(e) werden angezeigt.`;
+        }
+      }
+
+      function updateSelectionFromForm() {
+        const checkboxes = listElement.querySelectorAll('input[type="checkbox"][data-key]');
+        const checkedKeys = [];
+        checkboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+            checkedKeys.push(checkbox.dataset.key);
+          }
+        });
+        if (checkedKeys.length === checkboxes.length) {
+          writeSelection(null);
+          syncSelectionToCheckboxes(null);
+        } else {
+          const selection = new Set(checkedKeys);
+          writeSelection(selection);
+          syncSelectionToCheckboxes(selection);
+        }
+      }
+
+      async function loadServices() {
+        try {
+          statusMessage.textContent = "Lade Dienste …";
+          const response = await fetch("/services");
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+          }
+          const services = await response.json();
+          renderServices(services);
+          errorBanner.style.display = "none";
+          errorBanner.textContent = "";
+        } catch (error) {
+          listElement.innerHTML = "";
+          errorBanner.textContent = `Fehler beim Laden der Dienste: ${error.message}`;
+          errorBanner.style.display = "block";
+          statusMessage.textContent = "Fehler bei der Dienstabfrage.";
+        }
+      }
+
+      function renderServices(services) {
+        listElement.innerHTML = "";
+        if (!Array.isArray(services) || services.length === 0) {
+          const empty = document.createElement("li");
+          empty.textContent = "Es sind keine Dienste konfiguriert.";
+          empty.style.color = "rgba(226, 232, 240, 0.75)";
+          listElement.appendChild(empty);
+          statusMessage.textContent = "Keine Dienste konfiguriert.";
+          return;
+        }
+
+        const storedSelection = readSelection();
+        services.forEach((service) => {
+          const item = document.createElement("li");
+          item.className = "service-item";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.dataset.key = service.key;
+          checkbox.id = `service-${service.key}`;
+          checkbox.checked = storedSelection === null || storedSelection.has(service.key);
+
+          const label = document.createElement("label");
+          label.setAttribute("for", checkbox.id);
+
+          const title = document.createElement("strong");
+          title.textContent = service.name || service.key;
+          const description = document.createElement("span");
+          description.textContent =
+            service.adapter === "command"
+              ? `Adapter: ${service.adapter} • Dienstschlüssel: ${service.key}`
+              : `Dienstschlüssel: ${service.key}`;
+
+          label.appendChild(title);
+          label.appendChild(description);
+          item.appendChild(checkbox);
+          item.appendChild(label);
+          listElement.appendChild(item);
+        });
+
+        syncSelectionToCheckboxes(storedSelection);
+      }
+
+      listElement.addEventListener("change", (event) => {
+        if (event.target instanceof HTMLInputElement && event.target.type === "checkbox") {
+          updateSelectionFromForm();
+        }
+      });
+
+      showAllButton.addEventListener("click", () => {
+        writeSelection(null);
+        syncSelectionToCheckboxes(null);
+      });
+
+      hideAllButton.addEventListener("click", () => {
+        const selection = new Set();
+        writeSelection(selection);
+        syncSelectionToCheckboxes(selection);
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key && event.key !== STORAGE_KEY) {
+          return;
+        }
+        const storedSelection = readSelection();
+        syncSelectionToCheckboxes(storedSelection);
+      });
+
+      loadServices();
+    </script>
+  </body>
+</html>
