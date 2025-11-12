@@ -68,9 +68,13 @@ services:
       start: "systemctl start ors.service"
       stop: "systemctl stop ors.service"
       status: "systemctl status --no-pager ors.service"
+    metadata:
+      config_dir: "/var/lib/ors"
 ```
 
 Die Schlüssel `start`, `stop`, `restart`, `status` sind optional, wobei mindestens `start` definiert sein sollte, damit der Dienst gestartet werden kann. `status` ermöglicht eine Zustandsanzeige. Weitere Metadaten können in `metadata` abgelegt werden und stehen dem Adapter als freies Dictionary zur Verfügung.
+
+Der Standard-`CommandService` erzeugt neben der rohen Kommandoausgabe auch eine aufbereitete Zusammenfassung, sofern die Ausgabe einem `systemctl status` ähnelt. Zeilen mit `Active:`, `Loaded:`, `Main PID:`, `Tasks:`, `Memory:` und `CPU:` werden herausgefiltert und unter `details.systemctl` zurückgeliefert, sodass Frontends die wichtigsten Kennzahlen ohne weiteres Parsen anzeigen können.
 
 ## Erweiterungsmöglichkeiten
 

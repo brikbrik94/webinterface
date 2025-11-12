@@ -12,6 +12,7 @@ services:
       status: "systemctl status --no-pager ors.service"
     metadata:
       description: "Example configuration for the ORS service."
+      config_dir: "/var/lib/ors"
   - key: fastest-responding
     name: Fastest Responding
     adapter: command

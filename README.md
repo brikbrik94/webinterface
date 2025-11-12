@@ -9,6 +9,7 @@ backend/               # FastAPI-Backend mit Service-Adaptern
   app.py               # Einstiegspunkt für die API
   config/loader.py     # YAML-Konfigurationslader
   services/            # Adapter-Schnittstelle und Implementierungen
+frontend/              # Einfaches statisches UI zur ORS-Überwachung
 config/services.yaml   # Beispielkonfiguration für Dienste
 docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
 ```
@@ -41,6 +42,12 @@ docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
    - `GET /services` listet alle konfigurierten Dienste.
    - `GET /services/{key}` liefert Statusinformationen zu einem Dienst.
 
+## Test-UI für ORS
+
+Nach dem Start von Uvicorn steht unter [http://localhost:8000/ui/](http://localhost:8000/ui/) eine erste Testoberfläche bereit.
+Sie ruft alle 15 Sekunden `GET /services/ors` auf, visualisiert den Status und zeigt eine Zusammenfassung der wichtigsten
+`systemctl`-Zeilen sowie die in `config/services.yaml` hinterlegten Metadaten (z. B. `config_dir: /var/lib/ors`).
+
 ## Eigene Adapter hinzufügen
 
 Eine detaillierte Beschreibung der Adapter-Schnittstelle befindet sich in [`docs/service_interface.md`](docs/service_interface.md). Kurzfassung:
@@ -51,6 +58,6 @@ Eine detaillierte Beschreibung der Adapter-Schnittstelle befindet sich in [`docs
 
 ## Nächste Schritte
 
-- Frontend hinzufügen (z. B. mit React, Vue oder HTMX) zur Visualisierung und Steuerung.
+- Weitere Frontend-Seiten oder Framework-gestützte Oberflächen hinzufügen.
 - Authentifizierung für den Zugang zum Webinterface ergänzen.
-- Spezialisierte Adapter für systemd, Docker oder benutzerdefinierte Skripte implementieren.
+- Spezialisierte Adapter für systemd (DBus), Docker oder benutzerdefinierte Skripte implementieren.

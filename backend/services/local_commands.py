@@ -1,8 +1,9 @@
 """Generic adapter executing shell commands for lifecycle operations."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 import subprocess
-from typing import Any, Mapping, Optional
+from typing import Any, Optional
 
 from .base import ServiceAdapter, ServiceState, ShellCommandMixin
 
@@ -32,12 +33,38 @@ class CommandService(ShellCommandMixin, ServiceAdapter):
 
         try:
             output = subprocess.check_output(status_cmd, shell=True, text=True, stderr=subprocess.STDOUT)
-            return ServiceState(status="ok", details={"output": output.strip()})
+            details: dict[str, Any] = {"output": output.strip()}
+            summary = self._extract_systemctl_summary(output)
+            if summary:
+                details["systemctl"] = summary
+            return ServiceState(status="ok", details=details)
         except subprocess.CalledProcessError as exc:
-            return ServiceState(
-                status="error",
-                details={"returncode": exc.returncode, "output": exc.output.strip()},
-            )
+            output = exc.output or ""
+            details = {"returncode": exc.returncode, "output": output.strip()}
+            summary = self._extract_systemctl_summary(output)
+            if summary:
+                details["systemctl"] = summary
+            return ServiceState(status="error", details=details)
+
+    def _extract_systemctl_summary(self, output: str) -> dict[str, str]:
+        """Return selected lines from a ``systemctl`` output for quick inspection."""
+
+        summary: dict[str, str] = {}
+        for raw_line in output.splitlines():
+            line = raw_line.strip()
+            if line.startswith("Loaded:"):
+                summary.setdefault("loaded", line)
+            elif line.startswith("Active:"):
+                summary.setdefault("active", line)
+            elif line.startswith("Main PID:"):
+                summary.setdefault("main_pid", line)
+            elif line.startswith("Tasks:"):
+                summary.setdefault("tasks", line)
+            elif line.startswith("Memory:"):
+                summary.setdefault("memory", line)
+            elif line.startswith("CPU:"):
+                summary.setdefault("cpu", line)
+        return summary
 
     def _run_command(self, key: str) -> None:
         command = self.get_command(key)

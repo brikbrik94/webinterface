@@ -1,12 +1,27 @@
 """Minimal FastAPI backend exposing service status endpoints."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from .config.loader import ConfigError, ServiceConfig, load_config
 from .services import ServiceAdapter, ServiceState, registry
 
 app = FastAPI(title="Local Service Orchestrator", version="0.1.0")
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+
+app.mount("/ui", StaticFiles(directory=FRONTEND_DIR, html=True), name="ui")
+
+
+@app.get("/", include_in_schema=False)
+def redirect_to_ui() -> RedirectResponse:
+    """Redirect the root path to the static HTML test UI."""
+
+    return RedirectResponse(url="/ui/", status_code=307)
 
 
 def get_service_configs() -> list[ServiceConfig]:
@@ -63,5 +78,6 @@ def get_service_state(
                 "name": service_config.name,
                 "status": state.status,
                 "details": state.details,
+                "metadata": service_config.metadata,
             }
     raise HTTPException(status_code=404, detail=f"Service '{service_key}' not found")
