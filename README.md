@@ -36,8 +36,13 @@ docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
 1. Konfiguration anpassen: Bearbeiten Sie `config/services.yaml` und tragen Sie Ihre Dienste, Adaptertypen und Kommandos ein.
 2. Server starten:
    ```bash
-   uvicorn backend.app:app --reload
+   python -m backend
    ```
+   Der Prozess lauscht standardmäßig auf `0.0.0.0:8000` und ist somit aus dem lokalen
+   Netzwerk erreichbar. Über die Umgebungsvariablen `WEB_HOST`, `WEB_PORT` und
+   `WEB_RELOAD` (z. B. `WEB_RELOAD=1 python -m backend`) lässt sich das Verhalten
+   anpassen. Alternativ kann weiterhin `uvicorn backend.app:app --reload --host 0.0.0.0`
+   verwendet werden.
 3. API testen:
    - `GET /services` listet alle konfigurierten Dienste.
    - `GET /services/status` liefert eine Statusübersicht für alle Dienste.
@@ -51,8 +56,17 @@ man zur Detailansicht unter `service.html?key=<dienst>`, die alle 15 Sekunden de
 dem Roh-Output auch Metadaten wie das ORS-Konfigurationsverzeichnis (`/var/lib/ors`) darstellt.
 
 Über den Link „Anzeige konfigurieren“ gelangt man zur Seite `settings.html`. Dort lässt sich per Checkbox pro Dienst festlegen,
-welche Einträge auf dem Dashboard erscheinen sollen. Die Auswahl wird im Browser (Local Storage) gespeichert; ohne Auswahl
-werden automatisch alle Dienste angezeigt.
+ welche Einträge auf dem Dashboard erscheinen sollen. Die Auswahl wird im Browser (Local Storage) gespeichert; ohne Auswahl
+ werden automatisch alle Dienste angezeigt.
+
+### Beispiel: AIS-/ADS-B-Raspberry-Pi
+
+Die Datei [`config/services.yaml`](config/services.yaml) enthält neben ORS weitere
+Beispiele für die Überwachung eines Raspberry Pi mit AIS- und ADS-B-Feeds (u. a.
+`adsbexchange-feed`, `ais-catcher`, `readsb`, `tar1090`). Passen Sie die Einträge bei
+Bedarf an Hostnamen oder Dienstnamen Ihrer Installation an. Zusätzliche Metadaten wie
+`host` und `category` werden im UI angezeigt und helfen bei der Kategorisierung der
+Überwachungsziele.
 
 ## Eigene Adapter hinzufügen
 

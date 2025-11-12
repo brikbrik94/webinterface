@@ -61,18 +61,20 @@ Der mitgelieferte `CommandService`-Adapter führt Shell-Kommandos aus, die in de
 
 ```yaml
 services:
-  - key: ors
-    name: OpenRouteService
+  - key: readsb
+    name: readsb Receiver
     adapter: command
     commands:
-      start: "systemctl start ors.service"
-      stop: "systemctl stop ors.service"
-      status: "systemctl status --no-pager ors.service"
+      start: "systemctl start readsb.service"
+      stop: "systemctl stop readsb.service"
+      status: "systemctl status --no-pager readsb.service"
     metadata:
-      config_dir: "/var/lib/ors"
+      host: "ais-adsb"
+      category: "ADS-B"
+      description: "Primary ADS-B decoder providing data to feeder services."
 ```
 
-Die Schlüssel `start`, `stop`, `restart`, `status` sind optional, wobei mindestens `start` definiert sein sollte, damit der Dienst gestartet werden kann. `status` ermöglicht eine Zustandsanzeige. Weitere Metadaten können in `metadata` abgelegt werden und stehen dem Adapter als freies Dictionary zur Verfügung.
+Die Schlüssel `start`, `stop`, `restart`, `status` sind optional, wobei mindestens `start` definiert sein sollte, damit der Dienst gestartet werden kann. `status` ermöglicht eine Zustandsanzeige. Weitere Metadaten können in `metadata` abgelegt werden und stehen dem Adapter als freies Dictionary zur Verfügung. Diese Werte erscheinen auch im UI (z. B. `host`, `category`, `description`).
 
 Der Standard-`CommandService` erzeugt neben der rohen Kommandoausgabe auch eine aufbereitete Zusammenfassung, sofern die Ausgabe einem `systemctl status` ähnelt. Zeilen mit `Active:`, `Loaded:`, `Main PID:`, `Tasks:`, `Memory:` und `CPU:` werden herausgefiltert und unter `details.systemctl` zurückgeliefert, sodass Frontends die wichtigsten Kennzahlen ohne weiteres Parsen anzeigen können.
 
