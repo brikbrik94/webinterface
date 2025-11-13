@@ -97,7 +97,7 @@ def _parse_json_units(payload: str) -> list[SystemdService]:
     entries = json.loads(payload)
     services: list[SystemdService] = []
     for entry in entries:
-        name = entry.get("name")
+        name = entry.get("name") or entry.get("unit")
         if not name:
             continue
         description = entry.get("description") or ""

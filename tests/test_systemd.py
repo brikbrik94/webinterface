@@ -53,6 +53,27 @@ class SystemdHelpersTestCase(unittest.TestCase):
         self.assertEqual(services[0].name, "ssh.service")
         self.assertEqual(services[1].description, "Custom Service")
 
+    def test_list_systemd_services_accepts_unit_key(self) -> None:
+        payload = json.dumps(
+            [
+                {
+                    "unit": "piaware.service",
+                    "description": "FlightAware Uploader",
+                    "load": "loaded",
+                    "active_state": "active",
+                    "sub_state": "running",
+                }
+            ]
+        )
+
+        with mock.patch("backend.system.systemd._run_systemctl") as run:
+            run.return_value = mock.Mock(stdout=payload)
+            services = list_systemd_services()
+
+        self.assertEqual(len(services), 1)
+        self.assertEqual(services[0].name, "piaware.service")
+        self.assertEqual(services[0].active, "active")
+
     def test_service_states_for_units_reports_errors(self) -> None:
         outputs = [
             mock.Mock(
