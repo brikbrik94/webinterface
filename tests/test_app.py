@@ -5,6 +5,7 @@ import unittest
 from unittest import mock
 
 from backend import app as backend_app
+from backend.system import SystemdDiscoveryError, SystemdService
 from backend.services.base import ServiceState
 
 
@@ -54,6 +55,48 @@ class AppEndpointTestCase(unittest.TestCase):
         self.assertEqual(payload["status"], "error")
         self.assertEqual(payload["details"].get("output"), "failed")
         adapter.fetch_state.assert_called_once()
+
+    def test_systemd_services_endpoint_serialises_results(self) -> None:
+        services = [
+            SystemdService(
+                name="custom.service",
+                description="Custom",
+                load="loaded",
+                active="active",
+                sub="running",
+                following=None,
+                is_standard_service=False,
+            )
+        ]
+
+        with mock.patch.object(backend_app, "list_systemd_services", return_value=services):
+            payload = backend_app.get_systemd_services()
+
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]["unit"], "custom.service")
+        self.assertFalse(payload[0]["isStandardService"])
+
+    def test_systemd_services_endpoint_propagates_errors(self) -> None:
+        with mock.patch.object(
+            backend_app,
+            "list_systemd_services",
+            side_effect=SystemdDiscoveryError("kaputt"),
+        ):
+            with self.assertRaises(Exception) as ctx:
+                backend_app.get_systemd_services()
+
+        self.assertIn("kaputt", str(ctx.exception))
+
+    def test_systemd_status_endpoint_validates_units(self) -> None:
+        with self.assertRaises(Exception):
+            backend_app.get_systemd_service_status({"units": "not-a-list"})
+
+    def test_systemd_status_endpoint_returns_payload(self) -> None:
+        payload = [{"unit": "demo.service", "status": "ok", "details": {}}]
+        with mock.patch.object(backend_app, "service_states_for_units", return_value=payload):
+            result = backend_app.get_systemd_service_status({"units": ["demo.service"]})
+
+        self.assertEqual(result, payload)
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution

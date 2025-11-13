@@ -209,6 +209,9 @@
     <script>
       const params = new URLSearchParams(window.location.search);
       const serviceKey = params.get("key");
+      const SYSTEMD_PREFIX = "systemd::";
+      const isSystemdService = Boolean(serviceKey && serviceKey.startsWith(SYSTEMD_PREFIX));
+      const systemdUnit = isSystemdService ? serviceKey.slice(SYSTEMD_PREFIX.length) : null;
       const REFRESH_INTERVAL_MS = 15000;
 
       const serviceTitle = document.getElementById("service-title");
@@ -230,9 +233,12 @@
         errorBanner.textContent = "Es wurde kein Dienstschlüssel (?key=) angegeben.";
         errorBanner.style.display = "block";
       } else {
+        const descriptor = isSystemdService ? systemdUnit : serviceKey;
         serviceDescription.textContent =
-          `Zyklische Statusabfrage für den Dienst „${serviceKey}“. Die Ansicht aktualisiert sich alle 15 Sekunden.`;
-        document.title = `Dienst: ${serviceKey}`;
+          `Zyklische Statusabfrage für den ${
+            isSystemdService ? "systemd-Dienst" : "Dienst"
+          } „${descriptor}“. Die Ansicht aktualisiert sich alle 15 Sekunden.`;
+        document.title = `Dienst: ${descriptor}`;
         fetchState();
         setInterval(fetchState, REFRESH_INTERVAL_MS);
       }
@@ -279,32 +285,65 @@
 
       async function fetchState() {
         try {
-          const response = await fetch(`/services/${encodeURIComponent(serviceKey)}`);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+          if (isSystemdService) {
+            const response = await fetch("/systemd/services/status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ units: [systemdUnit] }),
+            });
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+            }
+            const payloads = await response.json();
+            const payload = payloads.find((entry) => entry.unit === systemdUnit);
+            if (!payload) {
+              throw new Error(`Dienst ${systemdUnit} wurde nicht gefunden`);
+            }
+
+            serviceTitle.textContent = systemdUnit;
+            document.title = `${systemdUnit} – systemd-Dienst`;
+
+            updateBadge(payload.status);
+            statusCard.hidden = false;
+            lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
+            outputPre.textContent = payload.details?.output || "Keine Ausgabe verfügbar.";
+            rawOutputCard.hidden = false;
+            renderDefinitionList(summaryList, payload.details?.systemctl || {});
+
+            const metadataEntries = { Einheit: systemdUnit };
+            renderDefinitionList(metadataList, metadataEntries);
+            metadataCard.hidden = false;
+
+            errorBanner.style.display = "none";
+            errorBanner.textContent = "";
+          } else {
+            const response = await fetch(`/services/${encodeURIComponent(serviceKey)}`);
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+            }
+            const payload = await response.json();
+            const displayName = payload.name || payload.key || serviceKey;
+
+            serviceTitle.textContent = displayName;
+            document.title = `${displayName} – Dienstdetails`;
+
+            updateBadge(payload.status);
+            statusCard.hidden = false;
+            lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
+            outputPre.textContent = payload.details?.output || "Keine Ausgabe verfügbar.";
+            rawOutputCard.hidden = false;
+            renderDefinitionList(summaryList, payload.details?.systemctl || {});
+
+            const metadataEntries = { ...(payload.metadata || {}) };
+            if (payload.details?.returncode !== undefined) {
+              metadataEntries["status returncode"] = payload.details.returncode;
+            }
+            renderDefinitionList(metadataList, metadataEntries);
+            metadataCard.hidden = false;
+
+            errorBanner.style.display = "none";
+            errorBanner.textContent = "";
           }
-          const payload = await response.json();
-          const displayName = payload.name || payload.key || serviceKey;
-
-          serviceTitle.textContent = displayName;
-          document.title = `${displayName} – Dienstdetails`;
-
-          updateBadge(payload.status);
-          statusCard.hidden = false;
-          lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
-          outputPre.textContent = payload.details?.output || "Keine Ausgabe verfügbar.";
-          rawOutputCard.hidden = false;
-          renderDefinitionList(summaryList, payload.details?.systemctl || {});
-
-          const metadataEntries = { ...(payload.metadata || {}) };
-          if (payload.details?.returncode !== undefined) {
-            metadataEntries["status returncode"] = payload.details.returncode;
-          }
-          renderDefinitionList(metadataList, metadataEntries);
-          metadataCard.hidden = false;
-
-          errorBanner.style.display = "none";
-          errorBanner.textContent = "";
         } catch (error) {
           updateBadge("error");
           statusCard.hidden = false;

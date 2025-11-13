@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
@@ -9,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config.loader import ConfigError, ServiceConfig, load_config
 from .services import ServiceAdapter, ServiceState, registry
+from .system import SystemdDiscoveryError, list_systemd_services, service_states_for_units
 
 app = FastAPI(title="Local Service Orchestrator", version="0.1.0")
 
@@ -110,3 +112,40 @@ def get_service_state(
         if service_config.key == service_key:
             return _serialize_state(service_config)
     raise HTTPException(status_code=404, detail=f"Service '{service_key}' not found")
+
+
+@app.get("/systemd/services")
+def get_systemd_services() -> list[dict[str, Any]]:
+    try:
+        services = list_systemd_services()
+    except SystemdDiscoveryError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    return [
+        {
+            "unit": service.name,
+            "description": service.description,
+            "load": service.load,
+            "active": service.active,
+            "sub": service.sub,
+            "following": service.following,
+            "isStandardService": service.is_standard_service,
+        }
+        for service in services
+    ]
+
+
+@app.post("/systemd/services/status")
+def get_systemd_service_status(units: dict[str, list[str]]) -> list[dict[str, Any]]:
+    requested = units.get("units", []) if isinstance(units, dict) else []
+    if not isinstance(requested, list):
+        raise HTTPException(status_code=400, detail="Body must contain a 'units' array")
+
+    normalized = [unit for unit in (str(item).strip() for item in requested) if unit]
+    if not normalized:
+        return []
+
+    try:
+        return service_states_for_units(normalized)
+    except SystemdDiscoveryError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc

@@ -9,6 +9,7 @@ backend/               # FastAPI-Backend mit Service-Adaptern
   app.py               # Einstiegspunkt für die API
   config/loader.py     # YAML-Konfigurationslader
   services/            # Adapter-Schnittstelle und Implementierungen
+  system/              # Helfer zur systemd-Erkennung
 frontend/              # Statisches UI mit Übersichts-, Detail- und Konfigurationsseite
 config/services.yaml   # Beispielkonfiguration für Dienste
 docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
@@ -47,6 +48,8 @@ docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
    - `GET /services` listet alle konfigurierten Dienste.
    - `GET /services/status` liefert eine Statusübersicht für alle Dienste.
    - `GET /services/{key}` liefert Statusinformationen zu einem einzelnen Dienst.
+   - `GET /systemd/services` gibt eine vollständige Liste der systemd-Services des Hosts zurück.
+   - `POST /systemd/services/status` erwartet eine `units`-Liste und liefert den aktuellen `systemctl`-Status.
 
 ## Weboberfläche
 
@@ -55,9 +58,19 @@ alle konfigurierten Dienste samt Status- und Systemctl-Zusammenfassung anzeigt. 
 man zur Detailansicht unter `service.html?key=<dienst>`, die alle 15 Sekunden den ausgewählten Dienst aktualisiert und neben
 dem Roh-Output auch Metadaten wie das ORS-Konfigurationsverzeichnis (`/var/lib/ors`) darstellt.
 
-Über den Link „Anzeige konfigurieren“ gelangt man zur Seite `settings.html`. Dort lässt sich per Checkbox pro Dienst festlegen,
- welche Einträge auf dem Dashboard erscheinen sollen. Die Auswahl wird im Browser (Local Storage) gespeichert; ohne Auswahl
- werden automatisch alle Dienste angezeigt.
+Über den Link „Anzeige konfigurieren“ gelangt man zur Seite `settings.html`. Dort lassen sich
+zum einen die in der YAML konfigurierten Dienste per Checkbox ein- oder ausblenden; ohne
+Auswahl erscheinen sie automatisch alle im Dashboard. Zusätzlich listet die Seite sämtliche
+systemd-Services des Hosts auf (`/systemd/services`) und erlaubt es, weitere Units auszuwählen,
+die temporär im Dashboard erscheinen sollen. Die Auswahl wird lokal im Browser (Local Storage)
+gespeichert. Ein Filter blendet auf Wunsch typische Systemdienste aus, sodass sich individuelle
+Dienste (etwa `ais-catcher` oder `readsb`) leichter finden lassen.
+
+Das Dashboard kombiniert anschließend beide Quellen: konfigurierte Dienste werden wie gewohnt
+über `/services/status` geladen, zusätzlich ausgewählte systemd-Units werden über
+`/systemd/services/status` abgefragt und mit reduzierten Metadaten (systemctl-Ausgabe,
+Lade-/Aktiv-Status) angezeigt. In der Detailansicht (`service.html`) erkennt das UI automatisch,
+ob ein Eintrag aus der YAML stammt oder direkt via systemd eingeblendet wurde.
 
 ### Beispiel: AIS-/ADS-B-Raspberry-Pi
 

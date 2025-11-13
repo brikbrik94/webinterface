@@ -200,11 +200,12 @@
       const errorBanner = document.getElementById("error-banner");
       const lastUpdated = document.getElementById("last-updated");
       const REFRESH_INTERVAL_MS = 15000;
-      const STORAGE_KEY = "dashboard.visibleServices";
+      const CONFIG_STORAGE_KEY = "dashboard.visibleServices";
+      const SYSTEMD_STORAGE_KEY = "dashboard.systemdServices";
 
-      function readVisibleSelection() {
+      function readConfiguredSelection() {
         try {
-          const raw = window.localStorage.getItem(STORAGE_KEY);
+          const raw = window.localStorage.getItem(CONFIG_STORAGE_KEY);
           if (!raw) {
             return null;
           }
@@ -212,19 +213,38 @@
           if (!Array.isArray(parsed)) {
             return null;
           }
-          const filtered = parsed.filter((entry) => typeof entry === "string");
-          return Array.from(new Set(filtered));
+          return new Set(parsed.filter((entry) => typeof entry === "string"));
         } catch (error) {
           console.warn("Konnte gespeicherte Diensteauswahl nicht lesen", error);
           return null;
         }
       }
 
+      function readSystemdSelection() {
+        try {
+          const raw = window.localStorage.getItem(SYSTEMD_STORAGE_KEY);
+          if (!raw) {
+            return new Set();
+          }
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) {
+            return new Set();
+          }
+          return new Set(parsed.filter((entry) => typeof entry === "string"));
+        } catch (error) {
+          console.warn("Konnte systemd-Auswahl nicht lesen", error);
+          return new Set();
+        }
+      }
+
       function handleStorageChange(event) {
-        if (event.key && event.key !== STORAGE_KEY) {
+        if (!event.key) {
+          loadServiceStates();
           return;
         }
-        loadServiceStates();
+        if (event.key === CONFIG_STORAGE_KEY || event.key === SYSTEMD_STORAGE_KEY) {
+          loadServiceStates();
+        }
       }
 
       async function loadServiceStates() {
@@ -234,7 +254,26 @@
             throw new Error(`HTTP ${response.status} – ${response.statusText}`);
           }
           const services = await response.json();
-          renderServices(services);
+
+          const systemdSelection = Array.from(readSystemdSelection());
+          let systemdStates = [];
+          if (systemdSelection.length > 0) {
+            const systemdResponse = await fetch("/systemd/services/status", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ units: systemdSelection }),
+            });
+            if (!systemdResponse.ok) {
+              throw new Error(
+                `Systemd-Abfrage fehlgeschlagen: HTTP ${systemdResponse.status} – ${systemdResponse.statusText}`,
+              );
+            }
+            systemdStates = await systemdResponse.json();
+          }
+
+          renderServices(services, systemdStates);
           lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
           errorBanner.style.display = "none";
           errorBanner.textContent = "";
@@ -281,34 +320,49 @@
         return "Keine weiteren Informationen verfügbar.";
       }
 
-      function renderServices(services) {
+      function renderServices(configuredServices, systemdStates) {
         grid.innerHTML = "";
-        if (!Array.isArray(services) || services.length === 0) {
-          const emptyNote = document.createElement("p");
-          emptyNote.textContent = "Es sind keine Dienste konfiguriert.";
-          emptyNote.style.color = "rgba(226, 232, 240, 0.75)";
-          grid.appendChild(emptyNote);
-          return;
-        }
+        const configuredSelection = readConfiguredSelection();
+        const filteredConfigured =
+          configuredSelection === null
+            ? configuredServices
+            : configuredServices.filter((service) => configuredSelection.has(service.key));
 
-        const visibleSelection = readVisibleSelection();
-        const visibleServices = visibleSelection === null
-          ? services
-          : services.filter((service) => visibleSelection.includes(service.key));
+        const systemdSelection = readSystemdSelection();
+        const mappedSystemd = systemdStates
+          .filter((entry) => systemdSelection.has(entry.unit))
+          .map((entry) => ({
+            key: `systemd::${entry.unit}`,
+            name: entry.unit,
+            status: entry.status,
+            details: entry.details || {},
+            metadata: { description: "Systemd-Dienst (temporär eingeblendet)" },
+            source: "systemd",
+          }));
 
-        if (visibleServices.length === 0) {
+        const combined = [...filteredConfigured, ...mappedSystemd];
+
+        if (combined.length === 0) {
           const hiddenNote = document.createElement("p");
-          hiddenNote.innerHTML =
-            'Alle Dienste wurden ausgeblendet. <a href="settings.html" style="color: #38bdf8;">Ändern Sie die Auswahl auf der Konfigurationsseite</a>.';
+          if (configuredServices.length === 0 && systemdSelection.size === 0) {
+            hiddenNote.textContent =
+              "Es sind keine Dienste konfiguriert oder ausgewählt. Hinterlegen Sie Einträge in der YAML-Konfiguration oder wählen Sie zusätzliche Systemdienste auf der Konfigurationsseite aus.";
+          } else {
+            hiddenNote.innerHTML =
+              'Alle Dienste wurden ausgeblendet. <a href="settings.html" style="color: #38bdf8;">Ändern Sie die Auswahl auf der Konfigurationsseite</a>.';
+          }
           hiddenNote.style.color = "rgba(226, 232, 240, 0.85)";
           hiddenNote.style.lineHeight = "1.6";
           grid.appendChild(hiddenNote);
           return;
         }
 
-        visibleServices.forEach((service) => {
+        combined.forEach((service) => {
           const card = document.createElement("a");
-          card.href = `service.html?key=${encodeURIComponent(service.key)}`;
+          card.href =
+            service.source === "systemd"
+              ? `service.html?key=${encodeURIComponent(service.key)}`
+              : `service.html?key=${encodeURIComponent(service.key)}`;
           card.className = `service-card`;
 
           const heading = document.createElement("h2");
@@ -325,7 +379,11 @@
 
           const meta = document.createElement("p");
           meta.className = "service-meta";
-          meta.textContent = service.metadata?.description || `Dienstschlüssel: ${service.key}`;
+          if (service.source === "systemd") {
+            meta.textContent = "Systemd-Dienst ohne YAML-Konfiguration";
+          } else {
+            meta.textContent = service.metadata?.description || `Dienstschlüssel: ${service.key}`;
+          }
 
           card.appendChild(badge);
           card.appendChild(heading);
