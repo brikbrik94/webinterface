@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard-Konfiguration</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background-color: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 2rem 1rem 3rem;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+      }
+
+      main {
+        width: min(1100px, 100%);
+        background-color: rgba(15, 23, 42, 0.85);
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+        padding: 2.5rem 2rem 3rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+      }
+
+      h1 {
+        font-size: clamp(1.6rem, 2vw + 1rem, 2.4rem);
+        margin: 0;
+        letter-spacing: 0.03em;
+        color: #f8fafc;
+      }
+
+      h2 {
+        font-size: clamp(1.2rem, 1vw + 0.8rem, 1.6rem);
+        margin: 0;
+        color: #f8fafc;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: rgba(226, 232, 240, 0.75);
+        line-height: 1.6;
+        max-width: 70ch;
+      }
+
+      nav a {
+        color: #38bdf8;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      nav a:hover,
+      nav a:focus {
+        text-decoration: underline;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .section {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(15, 23, 42, 0.65);
+      }
+
+      .section > p {
+        margin: 0;
+        color: rgba(226, 232, 240, 0.75);
+        line-height: 1.6;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+      }
+
+      .section-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        color: rgba(226, 232, 240, 0.75);
+      }
+
+      .section-controls input[type="checkbox"] {
+        accent-color: #38bdf8;
+      }
+
+      .service-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .service-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.65);
+      }
+
+      .service-item label {
+        cursor: pointer;
+        flex: 1;
+      }
+
+      .service-item strong {
+        display: block;
+        color: #f8fafc;
+        margin-bottom: 0.35rem;
+      }
+
+      .service-item span {
+        color: rgba(148, 163, 184, 0.85);
+        font-size: 0.9rem;
+      }
+
+      .badge-inline {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.18);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        color: #38bdf8;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      button,
+      .link-button {
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        font-weight: 600;
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+      }
+
+      button:hover,
+      button:focus,
+      .link-button:hover,
+      .link-button:focus {
+        background: rgba(56, 189, 248, 0.22);
+        border-color: rgba(125, 211, 252, 0.65);
+      }
+
+      .status {
+        color: rgba(226, 232, 240, 0.75);
+        font-size: 0.95rem;
+      }
+
+      .error-banner {
+        display: none;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+        background: rgba(127, 29, 29, 0.55);
+        color: #fecaca;
+        padding: 1rem;
+      }
+
+      .info {
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.55);
+        padding: 1rem;
+        color: rgba(226, 232, 240, 0.8);
+        line-height: 1.6;
+      }
+
+      .search-box {
+        width: 100%;
+        padding: 0.6rem 0.9rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.8);
+        color: inherit;
+      }
+
+      .search-box:focus {
+        outline: none;
+        border-color: rgba(125, 211, 252, 0.65);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 1.5rem 0.5rem 2.5rem;
+        }
+
+        main {
+          padding: 1.75rem 1.25rem 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <nav><a href="./">← Zurück zur Übersicht</a></nav>
+        <h1>Anzeige konfigurieren</h1>
+        <p class="subtitle">
+          Wählen Sie aus, welche Dienste auf der Startseite sichtbar sein sollen. Die Auswahl wird
+          lokal im Browser gespeichert und wirkt sich nur auf dieses Gerät aus.
+        </p>
+      </header>
+
+      <div id="error-banner" class="error-banner"></div>
+
+      <form id="service-form" aria-live="polite">
+        <section class="section" aria-labelledby="configured-heading">
+          <div class="section-header">
+            <h2 id="configured-heading">Bereits konfigurierte Dienste</h2>
+          </div>
+          <p>
+            Diese Liste spiegelt die Einträge aus der <code>config/services.yaml</code> wider. Ohne
+            Auswahl werden automatisch alle überwachten Dienste eingeblendet.
+          </p>
+          <ul id="configured-list" class="service-list"></ul>
+        </section>
+
+        <section class="section" aria-labelledby="systemd-heading">
+          <div class="section-header">
+            <h2 id="systemd-heading">Systemdienste entdecken</h2>
+            <label class="section-controls">
+              <input type="checkbox" id="toggle-standard" checked />
+              <span>Standarddienste ausblenden</span>
+            </label>
+          </div>
+          <p>
+            Die Liste enthält alle bekannten systemd-Services des Hosts. Aktivieren Sie weitere
+            Dienste, um sie zusätzlich auf der Übersichtsseite einzublenden. Diese Auswahl ergänzt
+            die YAML-Konfiguration – sie wird ausschließlich im Browser gespeichert.
+          </p>
+          <input
+            type="search"
+            id="systemd-filter"
+            class="search-box"
+            placeholder="Nach Unit oder Beschreibung filtern …"
+            aria-label="Systemdienste filtern"
+          />
+          <ul id="systemd-list" class="service-list"></ul>
+          <div class="info" id="systemd-info"></div>
+        </section>
+
+        <div class="info">
+          Werden keine Auswahl getroffen oder alle Häkchen entfernt, erscheinen alle konfigurierten
+          Dienste wieder automatisch in der Übersicht. Zusätzliche Systemdienste werden nur dann
+          angezeigt, wenn sie hier explizit ausgewählt wurden.
+        </div>
+
+        <div class="actions">
+          <button type="button" id="show-all">Alle anzeigen</button>
+          <button type="button" id="hide-all">Alle ausblenden</button>
+          <span class="status" id="status-message">Lade Dienste …</span>
+        </div>
+      </form>
+    </main>
+    <script>
+      const CONFIG_STORAGE_KEY = "dashboard.visibleServices";
+      const SYSTEMD_STORAGE_KEY = "dashboard.systemdServices";
+      const SYSTEMD_HIDE_STORAGE_KEY = "dashboard.systemdHideStandard";
+
+      const configuredList = document.getElementById("configured-list");
+      const systemdList = document.getElementById("systemd-list");
+      const formElement = document.getElementById("service-form");
+      const statusMessage = document.getElementById("status-message");
+      const errorBanner = document.getElementById("error-banner");
+      const showAllButton = document.getElementById("show-all");
+      const hideAllButton = document.getElementById("hide-all");
+      const toggleStandard = document.getElementById("toggle-standard");
+      const systemdFilter = document.getElementById("systemd-filter");
+      const systemdInfo = document.getElementById("systemd-info");
+
+      let configuredServices = [];
+      let systemdServices = [];
+
+      function readSelection(key) {
+        try {
+          const raw = window.localStorage.getItem(key);
+          if (!raw) {
+            return null;
+          }
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) {
+            return null;
+          }
+          return new Set(parsed.filter((entry) => typeof entry === "string"));
+        } catch (error) {
+          console.warn("Konnte gespeicherte Diensteauswahl nicht lesen", error);
+          return null;
+        }
+      }
+
+      function writeSelection(key, selectedKeys) {
+        if (selectedKeys === null) {
+          window.localStorage.removeItem(key);
+          return;
+        }
+        const ordered = Array.from(selectedKeys).sort();
+        window.localStorage.setItem(key, JSON.stringify(ordered));
+      }
+
+      function readSystemdSelection() {
+        const selection = readSelection(SYSTEMD_STORAGE_KEY);
+        if (selection === null) {
+          return new Set();
+        }
+        return selection;
+      }
+
+      function writeSystemdSelection(selectedUnits) {
+        writeSelection(SYSTEMD_STORAGE_KEY, selectedUnits === null ? null : new Set(selectedUnits));
+      }
+
+      function readConfiguredSelection() {
+        return readSelection(CONFIG_STORAGE_KEY);
+      }
+
+      function writeConfiguredSelection(selectedKeys) {
+        writeSelection(CONFIG_STORAGE_KEY, selectedKeys);
+      }
+
+      function readHideStandardPreference() {
+        try {
+          const value = window.localStorage.getItem(SYSTEMD_HIDE_STORAGE_KEY);
+          if (value === null) {
+            return true;
+          }
+          return value === "true";
+        } catch (error) {
+          console.warn("Konnte Filterpräferenz nicht lesen", error);
+          return true;
+        }
+      }
+
+      function writeHideStandardPreference(value) {
+        window.localStorage.setItem(SYSTEMD_HIDE_STORAGE_KEY, String(Boolean(value)));
+      }
+
+      function syncConfiguredSelectionToCheckboxes(selectedKeys) {
+        const checkboxes = configuredList.querySelectorAll('input[type="checkbox"][data-key]');
+        checkboxes.forEach((checkbox) => {
+          if (selectedKeys === null) {
+            checkbox.checked = true;
+          } else {
+            checkbox.checked = selectedKeys.has(checkbox.dataset.key);
+          }
+        });
+      }
+
+      function syncSystemdSelectionToCheckboxes(selectedUnits) {
+        const checkboxes = systemdList.querySelectorAll('input[type="checkbox"][data-unit]');
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = selectedUnits.has(checkbox.dataset.unit);
+        });
+      }
+
+      function updateStatusMessage() {
+        const configuredSelection = readConfiguredSelection();
+        const systemdSelection = readSystemdSelection();
+        const totalConfigured = configuredServices.length;
+        const configuredVisible =
+          configuredSelection === null ? totalConfigured : configuredSelection.size;
+        const totalSystemd = systemdServices.length;
+        const systemdVisible = systemdSelection.size;
+
+        const configuredLabel =
+          configuredSelection === null || configuredVisible === totalConfigured
+            ? "alle"
+            : `${configuredVisible} von ${totalConfigured}`;
+
+        statusMessage.textContent =
+          totalSystemd === 0
+            ? `Konfigurierte Dienste: ${configuredLabel}`
+            : `Konfigurierte Dienste: ${configuredLabel} • Zusätzliche Systemdienste: ${systemdVisible}`;
+      }
+
+      function renderConfiguredServices(services) {
+        configuredList.innerHTML = "";
+        if (!Array.isArray(services) || services.length === 0) {
+          const empty = document.createElement("li");
+          empty.textContent = "Es sind keine Dienste konfiguriert.";
+          empty.style.color = "rgba(226, 232, 240, 0.75)";
+          configuredList.appendChild(empty);
+          return;
+        }
+
+        const storedSelection = readConfiguredSelection();
+
+        services.forEach((service) => {
+          const item = document.createElement("li");
+          item.className = "service-item";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.dataset.key = service.key;
+          checkbox.id = `service-${service.key}`;
+          checkbox.checked = storedSelection === null || storedSelection.has(service.key);
+
+          const label = document.createElement("label");
+          label.setAttribute("for", checkbox.id);
+
+          const title = document.createElement("strong");
+          title.textContent = service.name || service.key;
+
+          const description = document.createElement("span");
+          description.textContent =
+            service.adapter === "command"
+              ? `Adapter: ${service.adapter} • Dienstschlüssel: ${service.key}`
+              : `Dienstschlüssel: ${service.key}`;
+
+          label.appendChild(title);
+          label.appendChild(description);
+          item.appendChild(checkbox);
+          item.appendChild(label);
+          configuredList.appendChild(item);
+        });
+
+        syncConfiguredSelectionToCheckboxes(storedSelection);
+      }
+
+      function renderSystemdServices(services) {
+        systemdList.innerHTML = "";
+        if (!Array.isArray(services) || services.length === 0) {
+          const empty = document.createElement("li");
+          empty.textContent = "Keine systemd-Dienste gefunden.";
+          empty.style.color = "rgba(226, 232, 240, 0.75)";
+          systemdList.appendChild(empty);
+          systemdInfo.textContent = "";
+          return;
+        }
+
+        const selection = readSystemdSelection();
+        const hideStandard = toggleStandard.checked;
+        const filterText = systemdFilter.value.trim().toLowerCase();
+
+        const configuredKeys = new Set(configuredServices.map((service) => service.key));
+
+        let visibleCount = 0;
+        services.forEach((service) => {
+          if (hideStandard && service.isStandardService) {
+            return;
+          }
+          const searchable = `${service.unit} ${service.description}`.toLowerCase();
+          if (filterText && !searchable.includes(filterText)) {
+            return;
+          }
+
+          visibleCount += 1;
+
+          const item = document.createElement("li");
+          item.className = "service-item";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.dataset.unit = service.unit;
+          checkbox.id = `systemd-${service.unit.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+          checkbox.checked = selection.has(service.unit);
+
+          const label = document.createElement("label");
+          label.setAttribute("for", checkbox.id);
+
+          const title = document.createElement("strong");
+          title.textContent = service.unit;
+
+          if (configuredKeys.has(service.unit)) {
+            const badge = document.createElement("span");
+            badge.className = "badge-inline";
+            badge.textContent = "Konfiguriert";
+            title.appendChild(badge);
+          }
+
+          const description = document.createElement("span");
+          const descriptor = [service.description, `${service.load} • ${service.active}/${service.sub}`]
+            .filter(Boolean)
+            .join(" – ");
+          description.textContent = descriptor;
+
+          label.appendChild(title);
+          label.appendChild(description);
+          item.appendChild(checkbox);
+          item.appendChild(label);
+          systemdList.appendChild(item);
+        });
+
+        if (visibleCount === 0) {
+          const empty = document.createElement("li");
+          empty.textContent = hideStandard
+            ? "Alle angezeigten Dienste gelten als Standard. Deaktivieren Sie den Filter, um sie einzublenden."
+            : "Keine Dienste entsprechen dem Filter.";
+          empty.style.color = "rgba(226, 232, 240, 0.75)";
+          systemdList.appendChild(empty);
+        }
+
+        systemdInfo.textContent = `${visibleCount} von ${services.length} Systemdiensten werden angezeigt.`;
+
+        syncSystemdSelectionToCheckboxes(selection);
+      }
+
+      function updateSelectionsFromForm() {
+        const configuredCheckboxes = configuredList.querySelectorAll('input[type="checkbox"][data-key]');
+        const selectedConfigured = [];
+        configuredCheckboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+            selectedConfigured.push(checkbox.dataset.key);
+          }
+        });
+        if (selectedConfigured.length === configuredCheckboxes.length) {
+          writeConfiguredSelection(null);
+        } else {
+          writeConfiguredSelection(new Set(selectedConfigured));
+        }
+
+        const systemdCheckboxes = systemdList.querySelectorAll('input[type="checkbox"][data-unit]');
+        const selectedUnits = new Set();
+        systemdCheckboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+            selectedUnits.add(checkbox.dataset.unit);
+          }
+        });
+        writeSystemdSelection(selectedUnits);
+
+        updateStatusMessage();
+      }
+
+      async function loadData() {
+        try {
+          statusMessage.textContent = "Lade Dienste …";
+          const hideStandard = readHideStandardPreference();
+          toggleStandard.checked = hideStandard;
+
+          const [configuredResult, systemdResult] = await Promise.allSettled([
+            fetch("/services"),
+            fetch("/systemd/services"),
+          ]);
+
+          if (configuredResult.status === "fulfilled" && configuredResult.value.ok) {
+            configuredServices = await configuredResult.value.json();
+            renderConfiguredServices(configuredServices);
+          } else {
+            configuredList.innerHTML = "";
+            const message = configuredResult.status === "fulfilled"
+              ? `HTTP ${configuredResult.value.status} – ${configuredResult.value.statusText}`
+              : configuredResult.reason?.message || String(configuredResult.reason);
+            const fallback = document.createElement("li");
+            fallback.textContent = `Fehler beim Laden der konfigurieren Dienste: ${message}`;
+            fallback.style.color = "rgba(226, 232, 240, 0.75)";
+            configuredList.appendChild(fallback);
+          }
+
+          if (systemdResult.status === "fulfilled" && systemdResult.value.ok) {
+            systemdServices = await systemdResult.value.json();
+            renderSystemdServices(systemdServices);
+            errorBanner.style.display = "none";
+            errorBanner.textContent = "";
+          } else {
+            systemdList.innerHTML = "";
+            const message = systemdResult.status === "fulfilled"
+              ? `HTTP ${systemdResult.value.status} – ${systemdResult.value.statusText}`
+              : systemdResult.reason?.message || String(systemdResult.reason);
+            const fallback = document.createElement("li");
+            fallback.textContent = `Fehler beim Laden der systemd-Dienste: ${message}`;
+            fallback.style.color = "rgba(226, 232, 240, 0.75)";
+            systemdList.appendChild(fallback);
+            errorBanner.textContent =
+              "Systemd-Dienste konnten nicht abgefragt werden. Prüfen Sie, ob systemctl verfügbar ist.";
+            errorBanner.style.display = "block";
+          }
+
+          updateStatusMessage();
+        } catch (error) {
+          console.error("Fehler beim Laden der Konfiguration", error);
+          errorBanner.textContent = `Fehler beim Laden der Konfiguration: ${error.message}`;
+          errorBanner.style.display = "block";
+          statusMessage.textContent = "Fehler bei der Dienstabfrage.";
+        }
+      }
+
+      configuredList.addEventListener("change", (event) => {
+        if (event.target instanceof HTMLInputElement && event.target.type === "checkbox") {
+          updateSelectionsFromForm();
+        }
+      });
+
+      systemdList.addEventListener("change", (event) => {
+        if (event.target instanceof HTMLInputElement && event.target.type === "checkbox") {
+          updateSelectionsFromForm();
+        }
+      });
+
+      showAllButton.addEventListener("click", () => {
+        writeConfiguredSelection(null);
+        const allUnits = new Set(systemdServices.map((service) => service.unit));
+        writeSystemdSelection(allUnits);
+        syncConfiguredSelectionToCheckboxes(null);
+        syncSystemdSelectionToCheckboxes(allUnits);
+        updateStatusMessage();
+      });
+
+      hideAllButton.addEventListener("click", () => {
+        writeConfiguredSelection(new Set());
+        writeSystemdSelection(new Set());
+        syncConfiguredSelectionToCheckboxes(new Set());
+        syncSystemdSelectionToCheckboxes(new Set());
+        updateStatusMessage();
+      });
+
+      toggleStandard.addEventListener("change", () => {
+        writeHideStandardPreference(toggleStandard.checked);
+        renderSystemdServices(systemdServices);
+      });
+
+      systemdFilter.addEventListener("input", () => {
+        renderSystemdServices(systemdServices);
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (!event.key) {
+          return;
+        }
+        if (event.key === CONFIG_STORAGE_KEY) {
+          const selection = readConfiguredSelection();
+          syncConfiguredSelectionToCheckboxes(selection);
+        }
+        if (event.key === SYSTEMD_STORAGE_KEY || event.key === SYSTEMD_HIDE_STORAGE_KEY) {
+          const units = readSystemdSelection();
+          toggleStandard.checked = readHideStandardPreference();
+          syncSystemdSelectionToCheckboxes(units);
+          renderSystemdServices(systemdServices);
+        }
+        updateStatusMessage();
+      });
+
+      loadData();
+    </script>
+  </body>
+</html>
