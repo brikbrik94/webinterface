@@ -1,0 +1,145 @@
+# Base configuration file for the local service orchestrator.
+# Each entry describes a service, its adapter implementation and the commands
+# required to interact with it. Replace the example commands with the actual
+# commands used to manage your local services.
+services:
+  - key: ors
+    name: OpenRouteService
+    adapter: command
+    commands:
+      start: "systemctl start ors.service"
+      stop: "systemctl stop ors.service"
+      status: "systemctl status --no-pager ors.service"
+    metadata:
+      description: "Example configuration for the ORS service."
+      config_dir: "/var/lib/ors"
+  - key: fastest-responding
+    name: Fastest Responding
+    adapter: command
+    commands:
+      start: "systemctl start fastest-responding.service"
+      stop: "systemctl stop fastest-responding.service"
+      restart: "systemctl restart fastest-responding.service"
+      status: "systemctl status --no-pager fastest-responding.service"
+    metadata:
+      description: "Placeholder entry for the fastest-responding project."
+  - key: adsbexchange-feed
+    name: ADSBexchange Feed
+    adapter: command
+    commands:
+      start: "systemctl start adsbexchange-feed.service"
+      stop: "systemctl stop adsbexchange-feed.service"
+      restart: "systemctl restart adsbexchange-feed.service"
+      status: "systemctl status --no-pager adsbexchange-feed.service"
+    metadata:
+      description: "Feeds local ADS-B data to ADSBexchange."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: adsbexchange-mlat
+    name: ADSBexchange MLAT
+    adapter: command
+    commands:
+      start: "systemctl start adsbexchange-mlat.service"
+      stop: "systemctl stop adsbexchange-mlat.service"
+      restart: "systemctl restart adsbexchange-mlat.service"
+      status: "systemctl status --no-pager adsbexchange-mlat.service"
+    metadata:
+      description: "Multilateration worker for ADSBexchange."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: ais-catcher
+    name: AIS Catcher
+    adapter: command
+    commands:
+      start: "systemctl start ais-catcher.service"
+      stop: "systemctl stop ais-catcher.service"
+      restart: "systemctl restart ais-catcher.service"
+      status: "systemctl status --no-pager ais-catcher.service"
+    metadata:
+      description: "Receives AIS vessel information from SDR hardware."
+      host: "ais-adsb"
+      category: "AIS"
+  - key: fr24feed
+    name: Flightradar24 Feed
+    adapter: command
+    commands:
+      start: "systemctl start fr24feed.service"
+      stop: "systemctl stop fr24feed.service"
+      restart: "systemctl restart fr24feed.service"
+      status: "systemctl status --no-pager fr24feed.service"
+    metadata:
+      description: "Uploader for Flightradar24 flight tracking."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: piaware
+    name: FlightAware PiAware
+    adapter: command
+    commands:
+      start: "systemctl start piaware.service"
+      stop: "systemctl stop piaware.service"
+      restart: "systemctl restart piaware.service"
+      status: "systemctl status --no-pager piaware.service"
+    metadata:
+      description: "FlightAware ADS-B uploader and status monitor."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: pfclient
+    name: PlaneFinder Client
+    adapter: command
+    commands:
+      start: "systemctl start pfclient.service"
+      stop: "systemctl stop pfclient.service"
+      restart: "systemctl restart pfclient.service"
+      status: "systemctl status --no-pager pfclient.service"
+    metadata:
+      description: "Uploads ADS-B data to PlaneFinder."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: rbfeeder
+    name: RadarBox Feeder
+    adapter: command
+    commands:
+      start: "systemctl start rbfeeder.service"
+      stop: "systemctl stop rbfeeder.service"
+      restart: "systemctl restart rbfeeder.service"
+      status: "systemctl status --no-pager rbfeeder.service"
+    metadata:
+      description: "Feeds ADS-B data to RadarBox."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: readsb
+    name: readsb Receiver
+    adapter: command
+    commands:
+      start: "systemctl start readsb.service"
+      stop: "systemctl stop readsb.service"
+      restart: "systemctl restart readsb.service"
+      status: "systemctl status --no-pager readsb.service"
+    metadata:
+      description: "Primary ADS-B decoder providing data to feeders."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: tar1090
+    name: tar1090 Visualisation
+    adapter: command
+    commands:
+      start: "systemctl start tar1090.service"
+      stop: "systemctl stop tar1090.service"
+      restart: "systemctl restart tar1090.service"
+      status: "systemctl status --no-pager tar1090.service"
+    metadata:
+      description: "Web-based map showing ADS-B traffic."
+      host: "ais-adsb"
+      category: "ADS-B"
+  - key: telegraf
+    name: Telegraf Metrics Agent
+    adapter: command
+    commands:
+      start: "systemctl start telegraf.service"
+      stop: "systemctl stop telegraf.service"
+      restart: "systemctl restart telegraf.service"
+      status: "systemctl status --no-pager telegraf.service"
+    metadata:
+      description: "Collects host metrics and forwards them to InfluxDB."
+      host: "ais-adsb"
+      category: "Monitoring"
