@@ -4,13 +4,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config.loader import ConfigError, ServiceConfig, load_config
 from .services import ServiceAdapter, ServiceState, registry
-from .system import SystemdDiscoveryError, list_systemd_services, service_states_for_units
+from .system import (
+    SystemdDiscoveryError,
+    fetch_journal_entries,
+    list_systemd_services,
+    service_states_for_units,
+)
 
 app = FastAPI(title="Local Service Orchestrator", version="0.1.0")
 
@@ -147,5 +152,17 @@ def get_systemd_service_status(units: dict[str, list[str]]) -> list[dict[str, An
 
     try:
         return service_states_for_units(normalized)
+    except SystemdDiscoveryError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/systemd/services/{unit}/journal")
+def get_systemd_service_journal(
+    unit: str,
+    limit: int = Query(200, ge=1, le=1000),
+    since: str | None = None,
+) -> list[dict[str, Any]]:
+    try:
+        return fetch_journal_entries(unit, limit=limit, since=since)
     except SystemdDiscoveryError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

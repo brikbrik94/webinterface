@@ -76,14 +76,14 @@ services:
 
 Die Schlüssel `start`, `stop`, `restart`, `status` sind optional, wobei mindestens `start` definiert sein sollte, damit der Dienst gestartet werden kann. `status` ermöglicht eine Zustandsanzeige. Weitere Metadaten können in `metadata` abgelegt werden und stehen dem Adapter als freies Dictionary zur Verfügung. Diese Werte erscheinen auch im UI (z. B. `host`, `category`, `description`).
 
-Der Standard-`CommandService` erzeugt neben der rohen Kommandoausgabe auch eine aufbereitete Zusammenfassung, sofern die Ausgabe einem `systemctl status` ähnelt. Zeilen mit `Active:`, `Loaded:`, `Main PID:`, `Tasks:`, `Memory:` und `CPU:` werden herausgefiltert und unter `details.systemctl` zurückgeliefert, sodass Frontends die wichtigsten Kennzahlen ohne weiteres Parsen anzeigen können.
+Der Standard-`CommandService` erzeugt neben der rohen Kommandoausgabe auch eine aufbereitete Zusammenfassung, sofern die Ausgabe einem `systemctl status` ähnelt. Zeilen mit `Active:`, `Loaded:`, `Main PID:`, `Tasks:`, `Memory:` und `CPU:` werden herausgefiltert und unter `details.systemctl` zurückgeliefert, sodass Frontends die wichtigsten Kennzahlen ohne weiteres Parsen anzeigen können. Wird zusätzlich `metadata.systemd_unit` gesetzt (z. B. `systemd_unit: "readsb.service"`), nutzt die Detailseite des Frontends diese Information automatisch, um die passenden `journalctl`-Einträge für diesen Dienst anzuzeigen.
 
 ## Systemd-Erkennung für die UI
 
 Zusätzlich zur YAML-Konfiguration stellt das Backend Hilfsfunktionen bereit, um alle systemd-Dienste des Hosts dynamisch zu erfassen:
 
-- `backend/system/systemd.py` enthält die Funktionen `list_systemd_services()` sowie `service_states_for_units()`. Erstere liefert eine vollständige Liste aller Units samt Beschreibung, Lade-/Aktiv-Status und einer heuristischen Kennzeichnung, ob es sich um einen typischen Systemdienst handelt. Letztere ruft für eine Menge von Units `systemctl status` auf und gibt eine reduzierte Struktur mit `output` und `systemctl`-Zusammenfassung zurück.
-- Die FastAPI-Endpunkte `GET /systemd/services` und `POST /systemd/services/status` kapseln diese Funktionen und versorgen das Frontend mit den Daten für die Konfigurationsseite.
+- `backend/system/systemd.py` enthält die Funktionen `list_systemd_services()`, `service_states_for_units()` sowie `fetch_journal_entries()`. Erstere liefert eine vollständige Liste aller Units samt Beschreibung, Lade-/Aktiv-Status und einer heuristischen Kennzeichnung, ob es sich um einen typischen Systemdienst handelt. Die Statusfunktion ruft für eine Menge von Units `systemctl status` auf und gibt eine reduzierte Struktur mit `output` und `systemctl`-Zusammenfassung zurück. `fetch_journal_entries()` führt `journalctl` mit JSON-Ausgabe aus und liefert strukturierte Meldungen (Zeitstempel, Priorität, Nachricht, Identifier) zurück.
+- Die FastAPI-Endpunkte `GET /systemd/services`, `POST /systemd/services/status` und `GET /systemd/services/{unit}/journal` kapseln diese Funktionen und versorgen das Frontend sowohl auf der Konfigurationsseite als auch in der Detailansicht mit Daten.
 
 Die UI speichert ausgewählte systemd-Units im Browser (Local Storage) und kombiniert sie auf dem Dashboard mit den statisch konfigurierten Diensten. Für dauerhaftes Monitoring empfiehlt es sich dennoch, relevante Dienste in `config/services.yaml` zu übernehmen, damit Metadaten und Kommandos konsistent hinterlegt sind.
 

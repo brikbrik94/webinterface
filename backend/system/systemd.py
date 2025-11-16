@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import json
 import shutil
 import subprocess
@@ -27,6 +28,9 @@ class SystemdService:
 
 
 SYSTEMCTL = shutil.which("systemctl")
+JOURNALCTL = shutil.which("journalctl")
+
+MAX_JOURNAL_ENTRIES = 1000
 
 STANDARD_PREFIXES: Sequence[str] = (
     "systemd-",
@@ -77,6 +81,23 @@ def _run_systemctl(
         )
     except FileNotFoundError as exc:  # pragma: no cover - defensive fallback
         raise SystemdDiscoveryError("systemctl executable could not be found") from exc
+    except subprocess.CalledProcessError as exc:
+        raise SystemdDiscoveryError(exc.stderr.strip() or exc.stdout.strip() or str(exc)) from exc
+
+
+def _run_journalctl(arguments: Iterable[str]) -> subprocess.CompletedProcess[str]:
+    if JOURNALCTL is None:
+        raise SystemdDiscoveryError("journalctl executable is not available on this host")
+
+    try:
+        return subprocess.run(  # noqa: S603,S607 - trusted local execution
+            [JOURNALCTL, *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:  # pragma: no cover - defensive fallback
+        raise SystemdDiscoveryError("journalctl executable could not be found") from exc
     except subprocess.CalledProcessError as exc:
         raise SystemdDiscoveryError(exc.stderr.strip() or exc.stdout.strip() or str(exc)) from exc
 
@@ -140,6 +161,39 @@ def _parse_plain_units(payload: str) -> list[SystemdService]:
             )
         )
     return services
+
+
+def _format_timestamp(value: str | int | None) -> str:
+    if value in (None, ""):
+        return ""
+    try:
+        micros = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    dt = datetime.fromtimestamp(micros / 1_000_000, tz=timezone.utc)
+    return dt.isoformat()
+
+
+PRIORITY_LABELS = {
+    0: "emerg",
+    1: "alert",
+    2: "crit",
+    3: "err",
+    4: "warning",
+    5: "notice",
+    6: "info",
+    7: "debug",
+}
+
+
+def _normalize_priority(value: str | int | None) -> str:
+    if value in (None, ""):
+        return "unknown"
+    try:
+        numeric = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return PRIORITY_LABELS.get(numeric, str(numeric))
 
 
 def list_systemd_services() -> list[SystemdService]:
@@ -214,4 +268,59 @@ def service_states_for_units(units: Sequence[str]) -> list[dict[str, object]]:
             statuses[-1]["status"] = "error"
 
     return statuses
+
+
+def fetch_journal_entries(
+    unit: str,
+    *,
+    limit: int = 200,
+    since: str | None = None,
+) -> list[dict[str, str]]:
+    """Return the latest journalctl entries for the given systemd unit."""
+
+    if not unit:
+        raise SystemdDiscoveryError("A systemd unit must be provided to query journalctl")
+
+    if limit < 1:
+        limit = 1
+    elif limit > MAX_JOURNAL_ENTRIES:
+        limit = MAX_JOURNAL_ENTRIES
+
+    arguments = [
+        "-u",
+        unit,
+        "--no-pager",
+        "--output=json",
+        "-n",
+        str(limit),
+    ]
+    if since:
+        arguments.extend(["--since", since])
+
+    result = _run_journalctl(arguments)
+    entries: list[dict[str, str]] = []
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        timestamp = payload.get("__REALTIME_TIMESTAMP") or payload.get("_SOURCE_REALTIME_TIMESTAMP")
+        message = payload.get("MESSAGE") or ""
+        identifier = (
+            payload.get("SYSLOG_IDENTIFIER")
+            or payload.get("_SYSTEMD_UNIT")
+            or payload.get("_COMM")
+            or unit
+        )
+        entries.append(
+            {
+                "timestamp": _format_timestamp(timestamp),
+                "message": message.strip(),
+                "priority": _normalize_priority(payload.get("PRIORITY")),
+                "identifier": identifier,
+            }
+        )
+    return entries
 

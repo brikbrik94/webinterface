@@ -3,6 +3,7 @@
 from .systemd import (
     SystemdDiscoveryError,
     SystemdService,
+    fetch_journal_entries,
     list_systemd_services,
     service_states_for_units,
 )
@@ -10,6 +11,7 @@ from .systemd import (
 __all__ = [
     "SystemdDiscoveryError",
     "SystemdService",
+    "fetch_journal_entries",
     "list_systemd_services",
     "service_states_for_units",
 ]

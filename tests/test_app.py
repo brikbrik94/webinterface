@@ -98,6 +98,24 @@ class AppEndpointTestCase(unittest.TestCase):
 
         self.assertEqual(result, payload)
 
+    def test_systemd_journal_endpoint_returns_entries(self) -> None:
+        entries = [{"timestamp": "2024-01-01T00:00:00Z", "message": "started"}]
+        with mock.patch.object(backend_app, "fetch_journal_entries", return_value=entries):
+            payload = backend_app.get_systemd_service_journal("demo.service")
+
+        self.assertEqual(payload, entries)
+
+    def test_systemd_journal_endpoint_surfaces_errors(self) -> None:
+        with mock.patch.object(
+            backend_app,
+            "fetch_journal_entries",
+            side_effect=SystemdDiscoveryError("failed"),
+        ):
+            with self.assertRaises(Exception) as ctx:
+                backend_app.get_systemd_service_journal("demo.service")
+
+        self.assertIn("failed", str(ctx.exception))
+
 
 if __name__ == "__main__":  # pragma: no cover - manual execution
     unittest.main()

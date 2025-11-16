@@ -50,13 +50,16 @@ docs/service_interface.md # Detaillierte Schnittstellenbeschreibung
    - `GET /services/{key}` liefert Statusinformationen zu einem einzelnen Dienst.
    - `GET /systemd/services` gibt eine vollständige Liste der systemd-Services des Hosts zurück.
    - `POST /systemd/services/status` erwartet eine `units`-Liste und liefert den aktuellen `systemctl`-Status.
+   - `GET /systemd/services/{unit}/journal` gibt die letzten Journal-Einträge einer Unit zurück (standardmäßig 200 Zeilen).
 
 ## Weboberfläche
 
 Nach dem Start von Uvicorn steht unter [http://localhost:8000/ui/](http://localhost:8000/ui/) eine Startseite bereit, die
 alle konfigurierten Dienste samt Status- und Systemctl-Zusammenfassung anzeigt. Über einen Klick auf einen Eintrag gelangt
 man zur Detailansicht unter `service.html?key=<dienst>`, die alle 15 Sekunden den ausgewählten Dienst aktualisiert und neben
-dem Roh-Output auch Metadaten wie das ORS-Konfigurationsverzeichnis (`/var/lib/ors`) darstellt.
+dem Roh-Output auch Metadaten wie das ORS-Konfigurationsverzeichnis (`/var/lib/ors`) darstellt. Wenn für einen Dienst eine
+systemd-Unit bekannt ist (bei reinen systemd-Einträgen automatisch, sonst über `metadata.systemd_unit`), blendet die Detail-
+seite zusätzlich die letzten `journalctl`-Meldungen ein, um Fehlerursachen schnell nachvollziehen zu können.
 
 Über den Link „Anzeige konfigurieren“ gelangt man zur Seite `settings.html`. Dort lassen sich
 zum einen die in der YAML konfigurierten Dienste per Checkbox ein- oder ausblenden; ohne
@@ -78,8 +81,8 @@ Die Datei [`config/services.yaml`](config/services.yaml) enthält neben ORS weit
 Beispiele für die Überwachung eines Raspberry Pi mit AIS- und ADS-B-Feeds (u. a.
 `adsbexchange-feed`, `ais-catcher`, `readsb`, `tar1090`). Passen Sie die Einträge bei
 Bedarf an Hostnamen oder Dienstnamen Ihrer Installation an. Zusätzliche Metadaten wie
-`host` und `category` werden im UI angezeigt und helfen bei der Kategorisierung der
-Überwachungsziele.
+`host`, `category` oder `systemd_unit` werden im UI angezeigt und helfen bei der
+Kategorisierung sowie beim automatischen Abruf der passenden Journaleinträge.
 
 ## Eigene Adapter hinzufügen
 

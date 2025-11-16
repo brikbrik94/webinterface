@@ -4,7 +4,12 @@ import json
 import unittest
 from unittest import mock
 
-from backend.system import SystemdDiscoveryError, list_systemd_services, service_states_for_units
+from backend.system import (
+    SystemdDiscoveryError,
+    fetch_journal_entries,
+    list_systemd_services,
+    service_states_for_units,
+)
 
 
 class SystemdHelpersTestCase(unittest.TestCase):
@@ -91,6 +96,39 @@ class SystemdHelpersTestCase(unittest.TestCase):
         self.assertEqual(statuses[0]["status"], "ok")
         self.assertEqual(statuses[1]["status"], "error")
         self.assertIn("not found", statuses[1]["details"]["error"])
+
+    def test_fetch_journal_entries_parses_json_lines(self) -> None:
+        payload = "\n".join(
+            [
+                json.dumps(
+                    {
+                        "__REALTIME_TIMESTAMP": "1700000000000000",
+                        "MESSAGE": "Started demo",
+                        "PRIORITY": "6",
+                        "SYSLOG_IDENTIFIER": "systemd",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "_SOURCE_REALTIME_TIMESTAMP": "1700000001000000",
+                        "MESSAGE": "Failure detected",
+                        "PRIORITY": "3",
+                        "_SYSTEMD_UNIT": "demo.service",
+                    }
+                ),
+            ]
+        )
+
+        with mock.patch("backend.system.systemd._run_journalctl") as runner:
+            runner.return_value = mock.Mock(stdout=payload)
+            entries = fetch_journal_entries("demo.service", limit=5000)
+
+        self.assertEqual(len(entries), 2)
+        self.assertTrue(entries[0]["timestamp"].startswith("20"))
+        self.assertEqual(entries[0]["priority"], "info")
+        self.assertEqual(entries[1]["priority"], "err")
+        args, _ = runner.call_args
+        self.assertIn("1000", args[0])  # limit is clamped to MAX_JOURNAL_ENTRIES
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution

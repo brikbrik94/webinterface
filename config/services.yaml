@@ -13,6 +13,7 @@ services:
     metadata:
       description: "Example configuration for the ORS service."
       config_dir: "/var/lib/ors"
+      systemd_unit: "ors.service"
   - key: fastest-responding
     name: Fastest Responding
     adapter: command
@@ -23,6 +24,7 @@ services:
       status: "systemctl status --no-pager fastest-responding.service"
     metadata:
       description: "Placeholder entry for the fastest-responding project."
+      systemd_unit: "fastest-responding.service"
   - key: adsbexchange-feed
     name: ADSBexchange Feed
     adapter: command
@@ -35,6 +37,7 @@ services:
       description: "Feeds local ADS-B data to ADSBexchange."
       host: "ais-adsb"
       category: "ADS-B"
+      systemd_unit: "adsbexchange-feed.service"
   - key: adsbexchange-mlat
     name: ADSBexchange MLAT
     adapter: command
@@ -47,6 +50,7 @@ services:
       description: "Multilateration worker for ADSBexchange."
       host: "ais-adsb"
       category: "ADS-B"
+      systemd_unit: "adsbexchange-mlat.service"
   - key: ais-catcher
     name: AIS Catcher
     adapter: command
@@ -59,6 +63,7 @@ services:
       description: "Receives AIS vessel information from SDR hardware."
       host: "ais-adsb"
       category: "AIS"
+      systemd_unit: "ais-catcher.service"
   - key: fr24feed
     name: Flightradar24 Feed
     adapter: command
@@ -71,6 +76,7 @@ services:
       description: "Uploader for Flightradar24 flight tracking."
       host: "ais-adsb"
       category: "ADS-B"
+      systemd_unit: "fr24feed.service"
   - key: piaware
     name: FlightAware PiAware
     adapter: command
@@ -83,6 +89,7 @@ services:
       description: "FlightAware ADS-B uploader and status monitor."
       host: "ais-adsb"
       category: "ADS-B"
+      systemd_unit: "piaware.service"
   - key: pfclient
     name: PlaneFinder Client
     adapter: command
@@ -95,6 +102,7 @@ services:
       description: "Uploads ADS-B data to PlaneFinder."
       host: "ais-adsb"
       category: "ADS-B"
+      systemd_unit: "pfclient.service"
   - key: rbfeeder
     name: RadarBox Feeder
     adapter: command
@@ -107,6 +115,7 @@ services:
       description: "Feeds ADS-B data to RadarBox."
       host: "ais-adsb"
       category: "ADS-B"
+      systemd_unit: "rbfeeder.service"
   - key: readsb
     name: readsb Receiver
     adapter: command
@@ -119,6 +128,7 @@ services:
       description: "Primary ADS-B decoder providing data to feeders."
       host: "ais-adsb"
       category: "ADS-B"
+      systemd_unit: "readsb.service"
   - key: tar1090
     name: tar1090 Visualisation
     adapter: command

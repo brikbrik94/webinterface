@@ -136,6 +136,34 @@
         padding: 1rem;
       }
 
+      .journal-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .journal-entry {
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+        background: rgba(15, 23, 42, 0.5);
+      }
+
+      .journal-entry header {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: rgba(226, 232, 240, 0.75);
+      }
+
+      .journal-entry p {
+        margin: 0.25rem 0 0;
+        font-size: 0.95rem;
+        color: #e2e8f0;
+      }
+
       .page-nav {
         margin-bottom: 1.5rem;
         display: flex;
@@ -205,6 +233,12 @@
         <h2>Rohdaten</h2>
         <pre id="status-output">…</pre>
       </section>
+
+      <section class="card" id="journal-card" hidden>
+        <h2>Journal</h2>
+        <p class="subtitle" id="journal-hint">Letzte Meldungen werden geladen …</p>
+        <div id="journal-list" class="journal-list"></div>
+      </section>
     </main>
     <script>
       const params = new URLSearchParams(window.location.search);
@@ -225,6 +259,10 @@
       const statusCard = document.getElementById("status-card");
       const metadataCard = document.getElementById("metadata-card");
       const rawOutputCard = document.getElementById("raw-output-card");
+      const journalCard = document.getElementById("journal-card");
+      const journalList = document.getElementById("journal-list");
+      const journalHint = document.getElementById("journal-hint");
+      let activeJournalUnit = null;
 
       if (!serviceKey) {
         serviceTitle.textContent = "Kein Dienst ausgewählt";
@@ -283,7 +321,91 @@
         });
       }
 
+      function extractSystemdUnit(metadata) {
+        if (!metadata) {
+          return null;
+        }
+        const candidate =
+          metadata.systemd_unit ||
+          metadata.systemdUnit ||
+          metadata.unit ||
+          metadata.systemdUnitName;
+        if (!candidate) {
+          return null;
+        }
+        return String(candidate).trim();
+      }
+
+      function renderJournalEntries(entries) {
+        journalList.innerHTML = "";
+        if (!entries || entries.length === 0) {
+          const empty = document.createElement("p");
+          empty.textContent = "Keine Journal-Einträge gefunden.";
+          empty.style.margin = "0";
+          empty.style.color = "rgba(226, 232, 240, 0.65)";
+          journalList.appendChild(empty);
+          return;
+        }
+
+        entries.forEach((entry) => {
+          const article = document.createElement("article");
+          article.className = "journal-entry";
+
+          const header = document.createElement("header");
+          const ts = document.createElement("span");
+          ts.textContent = entry.timestamp
+            ? new Date(entry.timestamp).toLocaleString("de-DE")
+            : "Unbekannte Zeit";
+          const meta = document.createElement("span");
+          meta.textContent = `${entry.identifier || "journalctl"} · ${entry.priority || "info"}`;
+          header.append(ts, meta);
+
+          const message = document.createElement("p");
+          message.textContent = entry.message || "(keine Nachricht)";
+
+          article.append(header, message);
+          journalList.appendChild(article);
+        });
+      }
+
+      async function loadJournal(unit) {
+        if (!unit) {
+          journalCard.hidden = true;
+          journalList.innerHTML = "";
+          activeJournalUnit = null;
+          return;
+        }
+
+        activeJournalUnit = unit;
+        journalCard.hidden = false;
+        journalHint.textContent = `Letzte Meldungen von ${unit}`;
+        try {
+          const response = await fetch(
+            `/systemd/services/${encodeURIComponent(unit)}/journal?limit=200`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+          }
+          const entries = await response.json();
+          if (activeJournalUnit !== unit) {
+            return;
+          }
+          renderJournalEntries(entries);
+        } catch (error) {
+          if (activeJournalUnit !== unit) {
+            return;
+          }
+          journalList.innerHTML = "";
+          const errorNote = document.createElement("p");
+          errorNote.textContent = `Journal konnte nicht geladen werden: ${error.message}`;
+          errorNote.style.color = "#fecaca";
+          errorNote.style.margin = "0";
+          journalList.appendChild(errorNote);
+        }
+      }
+
       async function fetchState() {
+        let journalUnit = null;
         try {
           if (isSystemdService) {
             const response = await fetch("/systemd/services/status", {
@@ -314,6 +436,8 @@
             renderDefinitionList(metadataList, metadataEntries);
             metadataCard.hidden = false;
 
+            journalUnit = systemdUnit;
+
             errorBanner.style.display = "none";
             errorBanner.textContent = "";
           } else {
@@ -338,17 +462,25 @@
             if (payload.details?.returncode !== undefined) {
               metadataEntries["status returncode"] = payload.details.returncode;
             }
+            const configuredUnit = extractSystemdUnit(payload.metadata || {});
+            if (configuredUnit) {
+              metadataEntries["systemd unit"] = configuredUnit;
+            }
             renderDefinitionList(metadataList, metadataEntries);
             metadataCard.hidden = false;
+
+            journalUnit = configuredUnit;
 
             errorBanner.style.display = "none";
             errorBanner.textContent = "";
           }
+          await loadJournal(journalUnit);
         } catch (error) {
           updateBadge("error");
           statusCard.hidden = false;
           rawOutputCard.hidden = true;
           metadataCard.hidden = true;
+          journalCard.hidden = true;
           errorBanner.textContent = `Fehler bei der Abfrage: ${error.message}`;
           errorBanner.style.display = "block";
           lastUpdated.textContent = `Fehlgeschlagen um ${formatTimestamp(new Date())}`;
