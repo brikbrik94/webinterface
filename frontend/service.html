@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dienstdetails</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background-color: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 2rem 1rem 3rem;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+      }
+
+      main {
+        width: min(960px, 100%);
+        background-color: rgba(15, 23, 42, 0.85);
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+        padding: 2.5rem 2rem 3rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      h1 {
+        font-size: clamp(1.6rem, 2vw + 1rem, 2.5rem);
+        margin: 0 0 1rem;
+        letter-spacing: 0.03em;
+        color: #f8fafc;
+      }
+
+      p.subtitle {
+        margin-top: 0;
+        margin-bottom: 2rem;
+        color: rgba(226, 232, 240, 0.75);
+        font-size: 1rem;
+      }
+
+      .card {
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card h2 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-size: 1.25rem;
+        color: #f8fafc;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 999px;
+        padding: 0.4rem 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.8rem;
+      }
+
+      .badge.ok {
+        background: rgba(34, 197, 94, 0.18);
+        color: #4ade80;
+        border: 1px solid rgba(74, 222, 128, 0.45);
+      }
+
+      .badge.error {
+        background: rgba(248, 113, 113, 0.18);
+        color: #fca5a5;
+        border: 1px solid rgba(248, 113, 113, 0.45);
+      }
+
+      .badge.unknown {
+        background: rgba(148, 163, 184, 0.18);
+        color: #cbd5f5;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+      }
+
+      dl.grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem 2rem;
+        margin: 0;
+      }
+
+      dl.grid dt {
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.7);
+      }
+
+      dl.grid dd {
+        margin: 0.25rem 0 0.75rem;
+        font-size: 1rem;
+        color: #e2e8f0;
+      }
+
+      pre {
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        font-size: 0.9rem;
+        overflow-x: auto;
+        line-height: 1.5;
+        color: #e2e8f0;
+      }
+
+      .timestamp {
+        font-size: 0.85rem;
+        color: rgba(148, 163, 184, 0.75);
+      }
+
+      .error-banner {
+        display: none;
+        margin-bottom: 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+        background: rgba(127, 29, 29, 0.55);
+        color: #fecaca;
+        padding: 1rem;
+      }
+
+      .journal-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .journal-entry {
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+        background: rgba(15, 23, 42, 0.5);
+      }
+
+      .journal-entry header {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: rgba(226, 232, 240, 0.75);
+      }
+
+      .journal-entry p {
+        margin: 0.25rem 0 0;
+        font-size: 0.95rem;
+        color: #e2e8f0;
+      }
+
+      .page-nav {
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #38bdf8;
+        text-decoration: none;
+        font-weight: 600;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 999px;
+        padding: 0.45rem 0.85rem;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .nav-link:hover,
+      .nav-link:focus {
+        text-decoration: none;
+        background-color: rgba(56, 189, 248, 0.18);
+        border-color: rgba(125, 211, 252, 0.65);
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 1.5rem 0.5rem 2.5rem;
+        }
+
+        main {
+          padding: 1.75rem 1.25rem 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav class="page-nav">
+        <a class="nav-link" href="./">← Übersicht</a>
+        <a class="nav-link" href="settings.html">⚙️ Anzeige konfigurieren</a>
+      </nav>
+      <h1 id="service-title">Dienststatus</h1>
+      <p class="subtitle" id="service-description">
+        Lade Details zum ausgewählten Dienst …
+      </p>
+
+      <div id="error-banner" class="error-banner"></div>
+
+      <section class="card" id="status-card" hidden>
+        <h2>Status</h2>
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <span id="status-badge" class="badge unknown">Unbekannt</span>
+          <span class="timestamp" id="last-updated">Noch keine Daten</span>
+        </div>
+        <dl class="grid" id="systemctl-summary"></dl>
+      </section>
+
+      <section class="card" id="metadata-card" hidden>
+        <h2>Konfiguration</h2>
+        <dl class="grid" id="metadata"></dl>
+      </section>
+
+      <section class="card" id="raw-output-card" hidden>
+        <h2>Rohdaten</h2>
+        <pre id="status-output">…</pre>
+      </section>
+
+      <section class="card" id="journal-card" hidden>
+        <h2>Journal</h2>
+        <p class="subtitle" id="journal-hint">Letzte Meldungen werden geladen …</p>
+        <div id="journal-list" class="journal-list"></div>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const serviceKey = params.get("key");
+      const SYSTEMD_PREFIX = "systemd::";
+      const isSystemdService = Boolean(serviceKey && serviceKey.startsWith(SYSTEMD_PREFIX));
+      const systemdUnit = isSystemdService ? serviceKey.slice(SYSTEMD_PREFIX.length) : null;
+      const REFRESH_INTERVAL_MS = 15000;
+
+      const serviceTitle = document.getElementById("service-title");
+      const serviceDescription = document.getElementById("service-description");
+      const statusBadge = document.getElementById("status-badge");
+      const lastUpdated = document.getElementById("last-updated");
+      const outputPre = document.getElementById("status-output");
+      const summaryList = document.getElementById("systemctl-summary");
+      const metadataList = document.getElementById("metadata");
+      const errorBanner = document.getElementById("error-banner");
+      const statusCard = document.getElementById("status-card");
+      const metadataCard = document.getElementById("metadata-card");
+      const rawOutputCard = document.getElementById("raw-output-card");
+      const journalCard = document.getElementById("journal-card");
+      const journalList = document.getElementById("journal-list");
+      const journalHint = document.getElementById("journal-hint");
+      let activeJournalUnit = null;
+
+      if (!serviceKey) {
+        serviceTitle.textContent = "Kein Dienst ausgewählt";
+        serviceDescription.textContent =
+          "Bitte wählen Sie einen Dienst auf der Übersichtsseite aus, um Details einzusehen.";
+        errorBanner.textContent = "Es wurde kein Dienstschlüssel (?key=) angegeben.";
+        errorBanner.style.display = "block";
+      } else {
+        const descriptor = isSystemdService ? systemdUnit : serviceKey;
+        serviceDescription.textContent =
+          `Zyklische Statusabfrage für den ${
+            isSystemdService ? "systemd-Dienst" : "Dienst"
+          } „${descriptor}“. Die Ansicht aktualisiert sich alle 15 Sekunden.`;
+        document.title = `Dienst: ${descriptor}`;
+        fetchState();
+        setInterval(fetchState, REFRESH_INTERVAL_MS);
+      }
+
+      function formatTimestamp(date) {
+        return new Intl.DateTimeFormat("de-DE", {
+          dateStyle: "medium",
+          timeStyle: "medium",
+        }).format(date);
+      }
+
+      function updateBadge(status) {
+        const normalized = (status || "unknown").toLowerCase();
+        let label = normalized;
+        if (normalized === "ok") {
+          label = "OK";
+        } else if (normalized === "error") {
+          label = "Fehler";
+        }
+        statusBadge.textContent = label;
+        statusBadge.className = `badge ${normalized}`;
+      }
+
+      function renderDefinitionList(listElement, data) {
+        listElement.innerHTML = "";
+        if (!data || Object.keys(data).length === 0) {
+          const emptyNote = document.createElement("p");
+          emptyNote.textContent = "Keine Daten verfügbar.";
+          emptyNote.style.margin = "0";
+          emptyNote.style.color = "rgba(226, 232, 240, 0.65)";
+          listElement.appendChild(emptyNote);
+          return;
+        }
+
+        Object.entries(data).forEach(([key, value]) => {
+          const dt = document.createElement("dt");
+          dt.textContent = key;
+          const dd = document.createElement("dd");
+          dd.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+          listElement.appendChild(dt);
+          listElement.appendChild(dd);
+        });
+      }
+
+      function extractSystemdUnit(metadata) {
+        if (!metadata) {
+          return null;
+        }
+        const candidate =
+          metadata.systemd_unit ||
+          metadata.systemdUnit ||
+          metadata.unit ||
+          metadata.systemdUnitName;
+        if (!candidate) {
+          return null;
+        }
+        return String(candidate).trim();
+      }
+
+      function renderJournalEntries(entries) {
+        journalList.innerHTML = "";
+        if (!entries || entries.length === 0) {
+          const empty = document.createElement("p");
+          empty.textContent = "Keine Journal-Einträge gefunden.";
+          empty.style.margin = "0";
+          empty.style.color = "rgba(226, 232, 240, 0.65)";
+          journalList.appendChild(empty);
+          return;
+        }
+
+        entries.forEach((entry) => {
+          const article = document.createElement("article");
+          article.className = "journal-entry";
+
+          const header = document.createElement("header");
+          const ts = document.createElement("span");
+          ts.textContent = entry.timestamp
+            ? new Date(entry.timestamp).toLocaleString("de-DE")
+            : "Unbekannte Zeit";
+          const meta = document.createElement("span");
+          meta.textContent = `${entry.identifier || "journalctl"} · ${entry.priority || "info"}`;
+          header.append(ts, meta);
+
+          const message = document.createElement("p");
+          message.textContent = entry.message || "(keine Nachricht)";
+
+          article.append(header, message);
+          journalList.appendChild(article);
+        });
+      }
+
+      async function loadJournal(unit) {
+        if (!unit) {
+          journalCard.hidden = true;
+          journalList.innerHTML = "";
+          activeJournalUnit = null;
+          return;
+        }
+
+        activeJournalUnit = unit;
+        journalCard.hidden = false;
+        journalHint.textContent = `Letzte Meldungen von ${unit}`;
+        try {
+          const response = await fetch(
+            `/systemd/services/${encodeURIComponent(unit)}/journal?limit=200`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+          }
+          const entries = await response.json();
+          if (activeJournalUnit !== unit) {
+            return;
+          }
+          renderJournalEntries(entries);
+        } catch (error) {
+          if (activeJournalUnit !== unit) {
+            return;
+          }
+          journalList.innerHTML = "";
+          const errorNote = document.createElement("p");
+          errorNote.textContent = `Journal konnte nicht geladen werden: ${error.message}`;
+          errorNote.style.color = "#fecaca";
+          errorNote.style.margin = "0";
+          journalList.appendChild(errorNote);
+        }
+      }
+
+      async function fetchState() {
+        let journalUnit = null;
+        try {
+          if (isSystemdService) {
+            const response = await fetch("/systemd/services/status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ units: [systemdUnit] }),
+            });
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+            }
+            const payloads = await response.json();
+            const payload = payloads.find((entry) => entry.unit === systemdUnit);
+            if (!payload) {
+              throw new Error(`Dienst ${systemdUnit} wurde nicht gefunden`);
+            }
+
+            serviceTitle.textContent = systemdUnit;
+            document.title = `${systemdUnit} – systemd-Dienst`;
+
+            updateBadge(payload.status);
+            statusCard.hidden = false;
+            lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
+            outputPre.textContent = payload.details?.output || "Keine Ausgabe verfügbar.";
+            rawOutputCard.hidden = false;
+            renderDefinitionList(summaryList, payload.details?.systemctl || {});
+
+            const metadataEntries = { Einheit: systemdUnit };
+            renderDefinitionList(metadataList, metadataEntries);
+            metadataCard.hidden = false;
+
+            journalUnit = systemdUnit;
+
+            errorBanner.style.display = "none";
+            errorBanner.textContent = "";
+          } else {
+            const response = await fetch(`/services/${encodeURIComponent(serviceKey)}`);
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+            }
+            const payload = await response.json();
+            const displayName = payload.name || payload.key || serviceKey;
+
+            serviceTitle.textContent = displayName;
+            document.title = `${displayName} – Dienstdetails`;
+
+            updateBadge(payload.status);
+            statusCard.hidden = false;
+            lastUpdated.textContent = `Letzte Aktualisierung: ${formatTimestamp(new Date())}`;
+            outputPre.textContent = payload.details?.output || "Keine Ausgabe verfügbar.";
+            rawOutputCard.hidden = false;
+            renderDefinitionList(summaryList, payload.details?.systemctl || {});
+
+            const metadataEntries = { ...(payload.metadata || {}) };
+            if (payload.details?.returncode !== undefined) {
+              metadataEntries["status returncode"] = payload.details.returncode;
+            }
+            const configuredUnit = extractSystemdUnit(payload.metadata || {});
+            if (configuredUnit) {
+              metadataEntries["systemd unit"] = configuredUnit;
+            }
+            renderDefinitionList(metadataList, metadataEntries);
+            metadataCard.hidden = false;
+
+            journalUnit = configuredUnit;
+
+            errorBanner.style.display = "none";
+            errorBanner.textContent = "";
+          }
+          await loadJournal(journalUnit);
+        } catch (error) {
+          updateBadge("error");
+          statusCard.hidden = false;
+          rawOutputCard.hidden = true;
+          metadataCard.hidden = true;
+          journalCard.hidden = true;
+          errorBanner.textContent = `Fehler bei der Abfrage: ${error.message}`;
+          errorBanner.style.display = "block";
+          lastUpdated.textContent = `Fehlgeschlagen um ${formatTimestamp(new Date())}`;
+        }
+      }
+    </script>
+  </body>
+</html>
